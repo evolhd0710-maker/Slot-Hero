@@ -1,0 +1,4 @@
+repository "Slot Hero Demo/Slot Hero Demo@14568596224753@cloud"
+  path "/"
+    br "/main"
+    co "/main"
