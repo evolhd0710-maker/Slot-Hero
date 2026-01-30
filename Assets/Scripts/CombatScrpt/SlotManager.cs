@@ -11,37 +11,51 @@ public class SlotManager : MonoBehaviour
     public GameObject emptyPrefab;
     public GameObject spriteMask;
     public GameObject slotMask;
+    public SlotMask[] slotMaskArr;
     public int[] slotValue;
     private int[,] slotTable;
     private bool[] rollDone;
     private Transform canvasTransform;
+    public bool isRollEnd;
 
     private void Awake()
     {
-        canvasTransform = FindAnyObjectByType<Canvas>().transform;
+        
     }
     void Start()
     {
+        canvasTransform = FindAnyObjectByType<Canvas>().transform;
         int slotCount = PlayerDataReader.Instance.playerData.slotCount;
-        // slotset 의 각 공간에 슬롯을 하나씩 할당한다.
+        // slotset 은 각 릴을 의미 slotTalbe은 각 슬롯의 숫자 구성을 저장, slotaValue는 각 슬롯의 값을 저장한다.
         slotSet = new GameObject[slotCount];
-        slotTable = new int[slotCount,9];
-        for(int i = 0; i < slotSet.Length; i++)
-        {
-            slotSet[i] = Instantiate(emptyPrefab, slotPoint.transform.position + new Vector3(i,0,0), Quaternion.identity, slotControl.transform);
-        }
-
+        slotTable = new int[slotCount, 9];
+        slotMaskArr = new SlotMask[slotCount];
         slotValue = new int[slotSet.Length];
+        MakeSlot();
+    }
+
+
+    void Update()
+    {
         
-        for(int i = 0; i< slotSet.Length; i++)
+    }
+
+    void MakeSlot()
+    {
+        for (int i = 0; i < slotSet.Length; i++)
         {
+            slotSet[i] = Instantiate(emptyPrefab, slotPoint.transform.position + new Vector3(i, 0, 0), Quaternion.identity, slotControl.transform);
+        }
+        for (int i = 0; i < slotSet.Length; i++)
+        {
+
             //슬롯테이블 채우기 위한 숫자
             int num = 0;
             //슬롯마다 한칸씩 밀기 위한 offset
             int slotPositionOffset = 0;
             int slotId = PlayerDataReader.Instance.playerData.slotNums[i]; //플레이어 슬롯 ID 받아와서 해당하는 슬롯 만든다.
             GameObject tmpSlot = null;
-            for(int j = 0;j < 9; j++)
+            for (int j = 0; j < 9; j++)
             {
 
                 for (int k = 0; k < SlotDataReader.Instance.slots[slotId].slotIndex[j]; k++)
@@ -51,23 +65,18 @@ public class SlotManager : MonoBehaviour
                     {
                         tmpSlot = slotImg[j];
                         Instantiate(spriteMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform);
-                        Instantiate(slotMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform);
+                        slotMaskArr[i] = Instantiate(slotMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform).GetComponent<SlotMask>();
+                        slotMaskArr[i].index = i;
                     }
                     Instantiate(slotImg[j], slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
                 }
             }
             //슬롯 회전 효과 주려면 시작과 끝이 동일해야함 그러기 위해서 처음 생성된 슬롯을 tmp 슬롯에 저장해서 마지막에 생성해준다.
-            if(tmpSlot != null)
+            if (tmpSlot != null)
             {
                 Instantiate(tmpSlot, slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
             }
         }
-    }
-
-
-    void Update()
-    {
-        
     }
 
     IEnumerator Roll(int index)
@@ -111,11 +120,19 @@ public class SlotManager : MonoBehaviour
 
     IEnumerator RollAll()
     {
+        isRollEnd = false;  
         int n = slotSet.Length;              // 보통 3
         rollDone = new bool[n];
 
         for (int i = 0; i < n; i++)
-            StartCoroutine(Roll(i));
+        {
+            if (!slotMaskArr[i].selected)
+                StartCoroutine(Roll(i));
+            else
+                rollDone[i] = true;
+        }
+            
+            
 
         yield return new WaitUntil(() =>
         {
@@ -123,6 +140,14 @@ public class SlotManager : MonoBehaviour
                 if (!rollDone[i]) return false;
             return true;
         });
+        for (int i = 0; i < n; i++)
+            slotMaskArr[i].ResetMask();
+        isRollEnd = true;
+    }
+
+    public void RollFunc()
+    {
+        StartCoroutine(RollAll());
     }
 
     public void ReturnValue(int num)
@@ -147,8 +172,7 @@ public class SlotManager : MonoBehaviour
             slotValue[num] = slotTable[num, 8];
     }
 
-    public void RollFunc()
-    {
-        StartCoroutine(RollAll());
-    }
+
+
+    
 }

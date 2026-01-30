@@ -1,25 +1,38 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 
 public class CombatManager : MonoBehaviour
 {
-
-    public GameManager gameManager;
-    public Animator textAnimator;
+    //전투 상태
+    public enum BattleState
+    {
+        Idle,
+        StartPhase,
+        RollPhase,
+        CombatPhase
+    }
+    private BattleState currentState;
     int[] slotNum = {1, 1, 1}; // 플레이어가 가진 슬롯 표현하기 위한 변수 일단 지금은 내가 입력했음 나중에 플레이어 데이터에서 직접 받아와야 함 
     //플레이어 관련 변수 
+    Player player;
     RelicData[] playerRelics;
-
+    private int rerollCount;
+    public SkillData selectedSkill;
+    public WeaponData currentWeapon;
+    int acc; //결투력
     //적 관련 변수 
-    GameObject enemy;
+    Enemy enemy;
 
     //UI
     public Text relicText, phaseText; //phase text 는 임시 
     public Button button1, button2, rollButton;
-    private bool isWaitingUserInput, skillPressed;
-    
+    private bool isWaitingUserInput, skillPressed, rollPressed;
+    public Animator textAnimator;
+    //다른 매니저
     public SlotManager slotManager;
+    public GameManager gameManager;
     void Start()
     {
         //아래 두 줄은 유물 발생을 테스트하기 위해서 임시로 넣은 코드임
@@ -27,6 +40,9 @@ public class CombatManager : MonoBehaviour
         gameManager.AchieveRelic(2);
         playerRelics = gameManager.GetRelicDatas();
         slotManager = FindAnyObjectByType<SlotManager>();
+        rerollCount = 1;
+        // 1 :PreTurn 2: Turn 3 : PostTurn
+        currentState = BattleState.Idle;
         StartCoroutine(TurnStarter());
     }
 
@@ -40,14 +56,15 @@ public class CombatManager : MonoBehaviour
 
     IEnumerator TurnStarter()
     {
-        yield return StartCoroutine(PreTurn());
-        yield return StartCoroutine(Turn());
-        yield return StartCoroutine(PostTurn());
+        yield return StartCoroutine(StartPhase());
+        yield return StartCoroutine(RollPhase());
+        yield return StartCoroutine(CombatPhase());
     }
-    //전투 시작 시 처리하는 요소 : 유물 효과, 적 스킬 선택 
-    IEnumerator PreTurn()
+    //전투 시작 전 처리하는 요소 : 유물 효과, 적 스킬 선택 
+    IEnumerator StartPhase()
     {
         // 턴 시작 페이즈 : 1. 유물 효과 발동 2. 몬스터 스킬 지정. 3. 유저 스킬 선택. 
+        currentState = BattleState.StartPhase;
         //유물 효과 발동
         StartCoroutine(Relics());
         //몬스터 스킬 지정
@@ -56,28 +73,32 @@ public class CombatManager : MonoBehaviour
         WaitUserInput();
         yield return new WaitUntil(() => skillPressed);
         EndUserInput();
-        yield return null;
+        skillPressed = false;
     }
-    IEnumerator Roll()
+
+    //스킬 선택 후 슬롯 회전 
+    IEnumerator RollPhase()
     {
-        slotManager.RollFunc();
-        yield return null;
+        //슬롯회전페이즈 : 1.굴림 2. 재굴림 3.슬롯 요소 발동 (3은 아직 미구현)
+        currentState = BattleState.RollPhase;
+        StartCoroutine(Roll());
+        yield return new WaitUntil(() => slotManager.isRollEnd);
+        WaitUserInput();
+        yield return new WaitUntil(() => rollPressed);
+        EndUserInput();
+        yield return new WaitUntil(() => slotManager.isRollEnd);
+        rollPressed = false;
+        acc = slotManager.slotValue.Sum(); 
+        print("결투력 : " + acc);
     }
-    //직접 전투 
-    IEnumerator Turn()
+    //전투 계산
+    IEnumerator CombatPhase()
     {
-
+        currentState = BattleState.CombatPhase;
         yield return null;
     }
-
-    //전투 후처리 
-    IEnumerator PostTurn()
-    {
-        yield return null;
-    }
-
-
-    //유물 처리
+    //preturn 함수 
+    //유물 발동
     IEnumerator Relics()
     {
         relicText.gameObject.SetActive(true);
@@ -101,12 +122,14 @@ public class CombatManager : MonoBehaviour
     {
         isWaitingUserInput = true;
         skillPressed = false;
-
-        rollButton.interactable = true;
-        button1.interactable = true;
-        button2.interactable = true;
+        if (currentState == BattleState.StartPhase)
+        {
+            button1.interactable = true;
+            button2.interactable = true;
+        }
+        else if (currentState == BattleState.RollPhase)
+            rollButton.interactable = true;
     }
-
     void EndUserInput()
     {
         isWaitingUserInput = false;
@@ -115,11 +138,32 @@ public class CombatManager : MonoBehaviour
         button1.interactable = false;
         button2.interactable = false;
     }
-
-    void OnClickSkill()
+    public void UserSkillInput()
     {
-        if (!isWaitingUserInput) return;
-            skillPressed = true;
+        skillPressed = true;
+    }
+
+    public void UserRollInput()
+    {
+        rollPressed = true;
+    }
+
+    public void WeaponSelect()
+    {
+
+    }
+    //Turn 함수
+    IEnumerator Roll()
+    {
+        slotManager.RollFunc();
+        yield return null;
+    }
+
+    public void EquipWeapon(WeaponData weapon)
+    {
+        currentWeapon = weapon;
+        button1.GetComponent<SkillButton>().mySkillData = weapon.skills[0];
+        button2.GetComponent<SkillButton>().mySkillData = weapon.skills[1];
     }
 }
 

@@ -42,7 +42,6 @@ public class SlotDataReader : MonoBehaviour
         string[] row = slotData.text.Split('\n');
         string[] column;
         slots = new SlotData[row.Length -5]; //위쪽 인덱스 4개 + 마지막줄 에 \n 하나 있어서 그것까지 5개 
-        print("row length " + row.Length);
         for (int i = 0; i < slots.Length; i++)
         {
             //각 슬롯 요소 초기화. 
@@ -51,7 +50,6 @@ public class SlotDataReader : MonoBehaviour
             column = row[i + 4].Split(',');
             for(int j = 0; j < 9; j++)
             {
-                print(int.Parse(column[j + 2]));
                 slots[i].slotIndex[j] = int.Parse(column[j + 2]);
             }
             data.Add(i + 1, slots[i]);

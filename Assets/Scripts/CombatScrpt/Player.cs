@@ -1,18 +1,18 @@
+using NUnit.Framework;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
-public class Player : MonoBehaviour
+public class Player : UnitBase
 {
-    PlayerData playerData;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
+    public List<WeaponData> ownedWeapons = new List<WeaponData>();
 
+    private void Start()
+    {
+        ownedWeapons = new List<WeaponData>(GameManager.Instance.weaponDatas);
     }
-
-    // Update is called once per frame
-    void Update()
+    public override IEnumerator ExecuteTurn()
     {
-        
+        yield return null;
     }
 }

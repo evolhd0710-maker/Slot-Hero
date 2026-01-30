@@ -44,7 +44,6 @@ public class PlayerDataReader : MonoBehaviour
         {
             playerData.slotNums[i] = int.Parse(strings[i + 5]);
         }
-
         print("PlayerData Loaded");
     }
 }
