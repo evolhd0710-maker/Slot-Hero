@@ -16,7 +16,7 @@ public class SlotDataReader : MonoBehaviour
     //임시로 2 나중에 슬롯 추가할 수 있는 변수 설정합시다.
     public SlotData[] slots;
     public Dictionary<int , SlotData> data;
-
+    public bool IsReady { get; private set; } = false;
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -56,6 +56,7 @@ public class SlotDataReader : MonoBehaviour
         }
         
         print("Slot Loaded");
+        IsReady = true;
         /*
          *로드된 슬롯 확인해보려고 임시로 추가함
         for (int i = 0; i < slots.Length; i++)

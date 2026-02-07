@@ -6,13 +6,10 @@ using UnityEngine;
 public class Player : UnitBase
 {
     public List<WeaponData> ownedWeapons = new List<WeaponData>();
-
-    private void Start()
+    private void Awake()
     {
+        Health = GameManager.Instance.playerCurrentHp;
         ownedWeapons = new List<WeaponData>(GameManager.Instance.weaponDatas);
     }
-    public override IEnumerator ExecuteTurn()
-    {
-        yield return null;
-    }
+
 }

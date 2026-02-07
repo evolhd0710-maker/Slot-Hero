@@ -1,17 +1,28 @@
-using System.Collections;
+ï»¿using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+
+public enum SlotOwner { Player, enemy }
+
 public class SlotManager : MonoBehaviour
 {
+
+    public SlotOwner owner;
+    public Enemy enemy;
     public GameObject[] slotImg;
     public GameObject slotPoint;
+    //ì—†ì–´ë„ ë ê²ƒê°™ìœ¼ë‹ˆ í•œë²ˆ ì‹œë„í•´ë´…ì‹œë‹¤. 02.04ê¸°ì¤€ ì•ˆí•´ë´„ 
     public GameObject slotControl;
     public GameObject[] slotSet;
     public GameObject emptyPrefab;
+    //ìŠ¬ë¡¯ íŠ¹ì • ë¶€ë¶„ë§Œ ë³´ì´ë„ë¡ í•˜ëŠ” ìŠ¤í”„ë¼ì´íŠ¸ë§ˆìŠ¤í¬
     public GameObject spriteMask;
-    public GameObject slotMask;
-    public SlotMask[] slotMaskArr;
+    //ìŠ¬ë¡¯ ê³ ì • íš¨ê³¼ ë‚´ê¸° ìœ„í•´ ìŠ¬ë¡¯ ìœ„ì— ë®ì–´ë‘ëŠ” ë§ˆìŠ¤í¬
+    public GameObject slotFixOverlay;
+    public SlotMask[] slotFixArr;
+
     public int[] slotValue;
     private int[,] slotTable;
     private bool[] rollDone;
@@ -20,24 +31,43 @@ public class SlotManager : MonoBehaviour
 
     private void Awake()
     {
-        
+
     }
-    void Start()
+    IEnumerator Start()
     {
+        while (SlotDataReader.Instance == null || !SlotDataReader.Instance.IsReady)
+        {
+            yield return null;
+        }
+        //í”Œë ˆì´ì–´ ìŠ¬ë¡¯
+        if (owner == SlotOwner.Player)
+        {
+            int slotCount = PlayerDataReader.Instance.playerData.slotCount;
+            // slotset ì€ ê° ë¦´ì„ ì˜ë¯¸ slotTalbeì€ ê° ìŠ¬ë¡¯ì˜ ìˆ«ì êµ¬ì„±ì„ ì €ì¥, slotaValueëŠ” ê° ìŠ¬ë¡¯ì˜ ê°’ì„ ì €ì¥í•œë‹¤.
+            slotSet = new GameObject[slotCount];
+            slotTable = new int[slotCount, 9];
+            slotFixArr = new SlotMask[slotCount];
+            slotValue = new int[slotSet.Length];
+            MakeSlot();
+        }
+        //ì  ìŠ¬ë¡¯
+        else
+        {
+            int slotCount = enemy.slotCount;
+            slotSet = new GameObject[slotCount];
+            slotValue = new int[slotSet.Length];
+            slotFixArr = new SlotMask[slotCount];
+            slotTable = new int[slotCount, 9];
+            MakeSlot();
+        }
         canvasTransform = FindAnyObjectByType<Canvas>().transform;
-        int slotCount = PlayerDataReader.Instance.playerData.slotCount;
-        // slotset Àº °¢ ¸±À» ÀÇ¹Ì slotTalbeÀº °¢ ½½·ÔÀÇ ¼ıÀÚ ±¸¼ºÀ» ÀúÀå, slotaValue´Â °¢ ½½·ÔÀÇ °ªÀ» ÀúÀåÇÑ´Ù.
-        slotSet = new GameObject[slotCount];
-        slotTable = new int[slotCount, 9];
-        slotMaskArr = new SlotMask[slotCount];
-        slotValue = new int[slotSet.Length];
-        MakeSlot();
+        
     }
 
 
     void Update()
     {
-        
+
     }
 
     void MakeSlot()
@@ -49,12 +79,21 @@ public class SlotManager : MonoBehaviour
         for (int i = 0; i < slotSet.Length; i++)
         {
 
-            //½½·ÔÅ×ÀÌºí Ã¤¿ì±â À§ÇÑ ¼ıÀÚ
-            int num = 0;
-            //½½·Ô¸¶´Ù ÇÑÄ­¾¿ ¹Ğ±â À§ÇÑ offset
-            int slotPositionOffset = 0;
-            int slotId = PlayerDataReader.Instance.playerData.slotNums[i]; //ÇÃ·¹ÀÌ¾î ½½·Ô ID ¹Ş¾Æ¿Í¼­ ÇØ´çÇÏ´Â ½½·Ô ¸¸µç´Ù.
-            GameObject tmpSlot = null;
+Â  Â  Â  Â  Â  Â  //ìŠ¬ë¡¯í…Œì´ë¸” ì±„ìš°ê¸° ìœ„í•œ ìˆ«ì
+Â  Â  Â  Â  Â  Â  int num = 0;
+Â  Â  Â  Â  Â  Â  //ìŠ¬ë¡¯ë§ˆë‹¤ í•œì¹¸ì”© ë°€ê¸° ìœ„í•œ offset
+Â  Â  Â  Â  Â  Â  int slotPositionOffset = 0;
+            int slotId;
+            if (owner == SlotOwner.Player)
+            {
+                slotId = PlayerDataReader.Instance.playerData.slotNums[i];
+            }
+            else
+            {
+                slotId = enemy.slotNums[i];
+            }
+             //í”Œë ˆì´ì–´ ìŠ¬ë¡¯ ID ë°›ì•„ì™€ì„œ í•´ë‹¹í•˜ëŠ” ìŠ¬ë¡¯ ë§Œë“ ë‹¤.
+Â  Â  Â  Â  Â  Â  GameObject tmpSlot = null;
             for (int j = 0; j < 9; j++)
             {
 
@@ -65,14 +104,14 @@ public class SlotManager : MonoBehaviour
                     {
                         tmpSlot = slotImg[j];
                         Instantiate(spriteMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform);
-                        slotMaskArr[i] = Instantiate(slotMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform).GetComponent<SlotMask>();
-                        slotMaskArr[i].index = i;
+                        slotFixArr[i] = Instantiate(slotFixOverlay, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform).GetComponent<SlotMask>();
+                        slotFixArr[i].index = i;
                     }
                     Instantiate(slotImg[j], slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
                 }
             }
-            //½½·Ô È¸Àü È¿°ú ÁÖ·Á¸é ½ÃÀÛ°ú ³¡ÀÌ µ¿ÀÏÇØ¾ßÇÔ ±×·¯±â À§ÇØ¼­ Ã³À½ »ı¼ºµÈ ½½·ÔÀ» tmp ½½·Ô¿¡ ÀúÀåÇØ¼­ ¸¶Áö¸·¿¡ »ı¼ºÇØÁØ´Ù.
-            if (tmpSlot != null)
+Â  Â  Â  Â  Â  Â  //ìŠ¬ë¡¯ íšŒì „ íš¨ê³¼ ì£¼ë ¤ë©´ ì‹œì‘ê³¼ ëì´ ë™ì¼í•´ì•¼í•¨ ê·¸ëŸ¬ê¸° ìœ„í•´ì„œ ì²˜ìŒ ìƒì„±ëœ ìŠ¬ë¡¯ì„ tmp ìŠ¬ë¡¯ì— ì €ì¥í•´ì„œ ë§ˆì§€ë§‰ì— ìƒì„±í•´ì¤€ë‹¤.
+Â  Â  Â  Â  Â  Â  if (tmpSlot != null)
             {
                 Instantiate(tmpSlot, slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
             }
@@ -100,8 +139,14 @@ public class SlotManager : MonoBehaviour
             yield return new WaitForSeconds(waitTime);
         }
 
-        // À§Ä¡¿¡ µû¸¥ °ª ´ëÀÔÇØÁà¾ßÇÔ 
-        ReturnValue(index);
+
+        Vector3 finalPos = slotSet[index].transform.position;
+        finalPos.y = Mathf.Round(finalPos.y); // ì†Œìˆ˜ì ì„ ë°˜ì˜¬ë¦¼í•´ì„œ ì •ìˆ˜ë¡œ ë§Œë“¦
+        slotSet[index].transform.position = finalPos;
+
+
+Â  Â  Â  Â  // ìœ„ì¹˜ì— ë”°ë¥¸ ê°’ ëŒ€ì…í•´ì¤˜ì•¼í•¨Â 
+Â  Â  Â  Â  ReturnValue(index);
 
         rollDone[index] = true;
 
@@ -111,8 +156,8 @@ public class SlotManager : MonoBehaviour
     {
         var pos = slotSet[index].transform.position;
 
-        if (pos.y <= -6.0f)
-            pos.y = 2.75f;
+        if (pos.y <= -9)
+            pos.y = 0;
         else
             pos.y -= 0.25f;
         slotSet[index].transform.position = pos;
@@ -120,19 +165,19 @@ public class SlotManager : MonoBehaviour
 
     IEnumerator RollAll()
     {
-        isRollEnd = false;  
-        int n = slotSet.Length;              // º¸Åë 3
-        rollDone = new bool[n];
+        isRollEnd = false;
+        int n = slotSet.Length;Â  Â  Â  Â  Â  Â  Â  // ë³´í†µ 3
+Â  Â  Â  Â  rollDone = new bool[n];
 
         for (int i = 0; i < n; i++)
         {
-            if (!slotMaskArr[i].selected)
+            if (!slotFixArr[i].selected)
                 StartCoroutine(Roll(i));
             else
                 rollDone[i] = true;
         }
-            
-            
+
+
 
         yield return new WaitUntil(() =>
         {
@@ -141,7 +186,7 @@ public class SlotManager : MonoBehaviour
             return true;
         });
         for (int i = 0; i < n; i++)
-            slotMaskArr[i].ResetMask();
+            slotFixArr[i].ResetMask();
         isRollEnd = true;
     }
 
@@ -152,27 +197,27 @@ public class SlotManager : MonoBehaviour
 
     public void ReturnValue(int num)
     {
-        if (slotSet[num].transform.position.y == 3 || slotSet[num].transform.position.y == -6)
+        if (slotSet[num].transform.position.y == 0 || slotSet[num].transform.position.y == -9)
             slotValue[num] = slotTable[num, 0];
-        else if (slotSet[num].transform.position.y == 2)
-            slotValue[num] = slotTable[num, 1];
-        else if (slotSet[num].transform.position.y == 1)
-            slotValue[num] = slotTable[num, 2];
-        else if (slotSet[num].transform.position.y == 0)
-            slotValue[num] = slotTable[num, 3];
         else if (slotSet[num].transform.position.y == -1)
-            slotValue[num] = slotTable[num, 4];
+            slotValue[num] = slotTable[num, 1];
         else if (slotSet[num].transform.position.y == -2)
-            slotValue[num] = slotTable[num, 5];
+            slotValue[num] = slotTable[num, 2];
         else if (slotSet[num].transform.position.y == -3)
-            slotValue[num] = slotTable[num, 6];
+            slotValue[num] = slotTable[num, 3];
         else if (slotSet[num].transform.position.y == -4)
-            slotValue[num] = slotTable[num, 7];
+            slotValue[num] = slotTable[num, 4];
         else if (slotSet[num].transform.position.y == -5)
+            slotValue[num] = slotTable[num, 5];
+        else if (slotSet[num].transform.position.y == -6)
+            slotValue[num] = slotTable[num, 6];
+        else if (slotSet[num].transform.position.y == -7)
+            slotValue[num] = slotTable[num, 7];
+        else if (slotSet[num].transform.position.y == -8)
             slotValue[num] = slotTable[num, 8];
     }
 
 
 
-    
+
 }

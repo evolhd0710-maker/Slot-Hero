@@ -18,13 +18,11 @@ public class Node : MonoBehaviour
             case 0:
                 //일반 몬스터
                 Debug.Log("0");
-               
                 mapManager.currentPosition++;
                 break;
             case 1:
                 //보스 몬스터
                 Debug.Log("1");
-
                 mapManager.currentPosition++;
                 break;
             case 2:

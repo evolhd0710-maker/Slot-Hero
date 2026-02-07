@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18ad0ad6164e4e34caf87fc6184bcc54, type: 3}
   m_Name: TestWeapon2
   m_EditorClassIdentifier: 
-  weaponName: Test2
+  weaponName: Spear
   weaponId: 1
   weaponSprite: {fileID: 0}
   skills:

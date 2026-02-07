@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class CombatManager : MonoBehaviour
 {
@@ -15,15 +16,20 @@ public class CombatManager : MonoBehaviour
     }
     private BattleState currentState;
     int[] slotNum = {1, 1, 1}; // 플레이어가 가진 슬롯 표현하기 위한 변수 일단 지금은 내가 입력했음 나중에 플레이어 데이터에서 직접 받아와야 함 
+    private bool isTurnEnd;
     //플레이어 관련 변수 
-    Player player;
+    public Player player;
     RelicData[] playerRelics;
     private int rerollCount;
-    public SkillData selectedSkill;
+    public SkillData  playerSelectedSkill;
     public WeaponData currentWeapon;
-    int acc; //결투력
+    int cp;
+    int pNum;
     //적 관련 변수 
-    Enemy enemy;
+    public Enemy enemy;
+    int ecp;
+    int eNum;
+    public SkillData enemySelectedSkill;
 
     //UI
     public Text relicText, phaseText; //phase text 는 임시 
@@ -32,18 +38,22 @@ public class CombatManager : MonoBehaviour
     public Animator textAnimator;
     //다른 매니저
     public SlotManager slotManager;
+    public SlotManager enemySlotManager;
     public GameManager gameManager;
     void Start()
     {
+ 
         //아래 두 줄은 유물 발생을 테스트하기 위해서 임시로 넣은 코드임
         gameManager.AchieveRelic(1);
         gameManager.AchieveRelic(2);
         playerRelics = gameManager.GetRelicDatas();
-        slotManager = FindAnyObjectByType<SlotManager>();
         rerollCount = 1;
-        // 1 :PreTurn 2: Turn 3 : PostTurn
         currentState = BattleState.Idle;
+        player.Setup();
+        enemy.Setup();
+        isTurnEnd = false;
         StartCoroutine(TurnStarter());
+
     }
 
 
@@ -51,22 +61,36 @@ public class CombatManager : MonoBehaviour
     {
         
     }
-    
+
 
 
     IEnumerator TurnStarter()
     {
-        yield return StartCoroutine(StartPhase());
-        yield return StartCoroutine(RollPhase());
-        yield return StartCoroutine(CombatPhase());
+        // 누군가 죽을 때까지(HP가 0 이하가 될 때까지) 무한 반복
+        while (player.Health > 0 && enemy.Health > 0)
+        {
+            // 1. 각 페이즈 순차 실행
+            yield return StartCoroutine(StartPhase());
+            yield return StartCoroutine(RollPhase());
+            yield return StartCoroutine(CombatPhase());
+
+            // 2. 한 턴이 끝난 후 잠깐의 휴식 (애니메이션 대기 등)
+            yield return new WaitForSeconds(1.0f);
+
+            Debug.Log("턴 종료.");
+        }
+
+        // 3. 루프를 빠져나왔다면 누군가 죽었다는 뜻
+        BattleResult();
     }
     //전투 시작 전 처리하는 요소 : 유물 효과, 적 스킬 선택 
     IEnumerator StartPhase()
     {
+        isTurnEnd = false;
         // 턴 시작 페이즈 : 1. 유물 효과 발동 2. 몬스터 스킬 지정. 3. 유저 스킬 선택. 
         currentState = BattleState.StartPhase;
         //유물 효과 발동
-        StartCoroutine(Relics());
+        StartCoroutine(ActivateRelics());
         //몬스터 스킬 지정
         EnemyMoveAlloc();
         //유저 입력 대기 
@@ -82,24 +106,69 @@ public class CombatManager : MonoBehaviour
         //슬롯회전페이즈 : 1.굴림 2. 재굴림 3.슬롯 요소 발동 (3은 아직 미구현)
         currentState = BattleState.RollPhase;
         StartCoroutine(Roll());
-        yield return new WaitUntil(() => slotManager.isRollEnd);
+        StartCoroutine(Eroll());
+
+        yield return new WaitUntil(() => slotManager.isRollEnd && enemySlotManager.isRollEnd);
         WaitUserInput();
         yield return new WaitUntil(() => rollPressed);
         EndUserInput();
         yield return new WaitUntil(() => slotManager.isRollEnd);
         rollPressed = false;
-        acc = slotManager.slotValue.Sum(); 
-        print("결투력 : " + acc);
     }
-    //전투 계산
+    //전투 계산 1. 결투 시 발동하는 유물, 효과, 스킬 발동(유물 과 스킬 미구현으로 인해 뒤로 미루겠음) 2. 결투력 계산/비교 3. 추가 효과 리셋 4. 결투 승패& 종료 시를 트리거로 하는 효과 발동 (1과 마찬가지로 미구현) 
     IEnumerator CombatPhase()
     {
+        print("CombatPhase 진입");
         currentState = BattleState.CombatPhase;
+
+        yield return new WaitForSeconds(1.0f);  
+
+        cp = slotManager.slotValue.Sum();
+        ecp = enemySlotManager.slotValue.Sum();
+
+        //아래 두 줄은 나중에 애니메이션이나 효과로 대체해야함
+        Debug.Log("player combat power : " + cp);
+        Debug.Log("enemy combat power : " + ecp);
+        yield return new WaitForSeconds(1.0f);
+        //스킬 순서 결정
+        bool isPlayerFirst;
+        if(playerSelectedSkill.skillPriority >= enemySelectedSkill.skillPriority)
+            isPlayerFirst = true;
+        else
+            isPlayerFirst = false; 
+        
+        CalculateAndCompareCP();
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (isPlayerFirst)
+        {
+            playerSelectedSkill.ExecuteSkill(player, enemy, pNum);
+            yield return new WaitForSeconds(1f); // 스킬 연출 시간만큼 대기
+
+            if (enemy.Health > 0) // 적이 죽지 않았을 때만 반격
+            {
+                enemySelectedSkill.ExecuteSkill(enemy, player, eNum);
+                yield return new WaitForSeconds(1f);
+            }
+        }
+        else
+        {
+            enemySelectedSkill.ExecuteSkill(enemy, player, eNum);
+            yield return new WaitForSeconds(1f);
+
+            if (player.Health > 0)
+            {
+                playerSelectedSkill.ExecuteSkill(player, enemy, pNum);
+                yield return new WaitForSeconds(1f);
+            }
+        }
+
         yield return null;
+        isTurnEnd = true;
     }
-    //preturn 함수 
-    //유물 발동
-    IEnumerator Relics()
+    //StartPhase Function 
+    IEnumerator ActivateRelics()
     {
         relicText.gameObject.SetActive(true);
         //현재는 유물이 텍스트만 띄우고 있지만 추후 유물의 실제 효과도 적용해야 함
@@ -111,13 +180,11 @@ public class CombatManager : MonoBehaviour
         }
         relicText.gameObject.SetActive(false);
     }
-
-    //몬스터 스킬 지정
     void EnemyMoveAlloc()
     {
-
+        //1. 사용가능 여부 확인 2. 사용가능 스킬 중에서 랜덤 선택하여 사용(MoveIndex 에 skill 배열의 index 를 할당) 
+        enemySelectedSkill = enemy.skills[Random.Range(0, 2)];
     }
-
     void WaitUserInput()
     {
         isWaitingUserInput = true;
@@ -138,24 +205,27 @@ public class CombatManager : MonoBehaviour
         button1.interactable = false;
         button2.interactable = false;
     }
-    public void UserSkillInput()
+    public void UserInputSkill()
     {
         skillPressed = true;
     }
 
-    public void UserRollInput()
+    public void UserInputRoll()
     {
         rollPressed = true;
     }
 
-    public void WeaponSelect()
-    {
 
-    }
-    //Turn 함수
+    //RollPhase Function
     IEnumerator Roll()
     {
         slotManager.RollFunc();
+        yield return null;
+    }
+    
+    IEnumerator Eroll()
+    {
+        enemySlotManager.RollFunc();
         yield return null;
     }
 
@@ -164,6 +234,39 @@ public class CombatManager : MonoBehaviour
         currentWeapon = weapon;
         button1.GetComponent<SkillButton>().mySkillData = weapon.skills[0];
         button2.GetComponent<SkillButton>().mySkillData = weapon.skills[1];
+    }
+
+    //CombatPhaseFunction
+    private void CalculateAndCompareCP()
+    {
+        pNum = playerSelectedSkill.CalculateNumber(slotManager.slotValue);
+        print("플레이어 숫자 : " + pNum);
+        eNum = enemySelectedSkill.CalculateNumber(enemySlotManager.slotValue);
+        print("적 숫자 : " + eNum);
+
+        if (ecp < cp)
+        {
+            eNum /= 2;
+            print("결투력 승리. 적 숫자 (" + eNum + ") 으로 조정됨");
+        }
+        else if (ecp == cp)
+        {
+            print("결투력 동등");
+
+        }
+        else
+        {
+            pNum /= 2;
+            print("결투력 패배. 플레이어 숫자 (" + pNum + ") 으로 조정됨");
+        }
+    }
+
+    void BattleResult()
+    {
+        if (player.Health <= 0)
+            Debug.Log("플레이어 패배...");
+        else
+            Debug.Log("플레이어 승리!");
     }
 }
 

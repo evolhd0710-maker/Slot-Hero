@@ -14,7 +14,7 @@ public class SkillButton : MonoBehaviour
     public void OnClicked()
     {
         print("스킬" + mySkillData.name +"선택");
-        combatManager.selectedSkill = mySkillData;
+        combatManager.playerSelectedSkill = mySkillData;
     }
 
     public void SetSkill(SkillData skill)

@@ -6,6 +6,8 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
     public Dictionary<int, RelicData> playerRelicData = new Dictionary<int, RelicData>();
     public List<WeaponData> weaponDatas = new List<WeaponData>();
+    public int playerCurrentHp;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -29,7 +31,6 @@ public class GameManager : MonoBehaviour
         {
             data[i] = playerRelicData[i];
         }
-
         return data;    
     }
 

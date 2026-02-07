@@ -18,9 +18,8 @@ public class WeaponListUI : MonoBehaviour
         {
             GameObject btn = Instantiate(weaponButtonPrefab, contentParent);
             spawnedButtons.Add(btn);
-            btn.GetComponentInChildren<TextMeshProUGUI>().text = $"{index++}";
+            btn.GetComponentInChildren<TextMeshProUGUI>().text = weapon.weaponName;
             btn.GetComponent<Button>().onClick.AddListener(() => OnWeaponSelected(weapon));
-
         }
     }
 

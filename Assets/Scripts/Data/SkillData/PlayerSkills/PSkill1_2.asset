@@ -9,11 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4a07ea722c30304088004240905fdaa, type: 3}
-  m_Name: Skill4
+  m_Script: {fileID: 11500000, guid: ba543e1b4a75fe740ba03ed4de7487fe, type: 3}
+  m_Name: PSkill1_2
   m_EditorClassIdentifier: 
-  skillId: 3
-  skillSort: 0
-  skillName: Skill4
-  useSlotIndices: 
+  skillId: 1
+  skillPriority: 0
+  skillName: "\uAC80\uBC29\uD328 2\uBC88\uC2A4\uD0AC \uBC29\uC5B4"
+  useSlotIndices: 00000000
   animationTrigger: 
+  buffToApply: {fileID: 0}
+  buffMagnitude: 0
+  buffDuration: 0
