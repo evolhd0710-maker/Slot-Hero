@@ -7,6 +7,5 @@ public class PlayerSkill1_1 : SkillData
     {
         base.ExecuteSkill(caster, target, num);
         target.TakeDamage(num);
-        Debug.Log($"{target.name}에 {num} 데미지");
     }
 }
