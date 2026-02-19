@@ -13,7 +13,6 @@ public class SlotDataReader : MonoBehaviour
 {   
     //누가 접근할지 몰라서 일단 싱글톤으로 설정해놨는데 지금은 CombatManager만 접근하기 때문에 추후 직접 참조로 전환할 여지 있음
     public static SlotDataReader Instance { get; private set; }
-    //임시로 2 나중에 슬롯 추가할 수 있는 변수 설정합시다.
     public SlotData[] slots;
     public Dictionary<int , SlotData> data;
     public bool IsReady { get; private set; } = false;

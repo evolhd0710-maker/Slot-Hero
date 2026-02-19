@@ -7,5 +7,5 @@ public class PlayerData
     public int weapon;
     public int[] relics;
     public int slotCount;
-    public int[] slotNums;
+    public int[] slotReelName;
 }

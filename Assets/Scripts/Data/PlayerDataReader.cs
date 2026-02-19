@@ -39,10 +39,10 @@ public class PlayerDataReader : MonoBehaviour
         playerData.weapon = int.Parse(strings[2]);
         playerData.relics = strings[3].Split('/').Select(int.Parse).ToArray();
         playerData.slotCount = int.Parse(strings[4]);
-        playerData.slotNums = new int[playerData.slotCount];
+        playerData.slotReelName = new int[playerData.slotCount];
         for(int i = 0; i < playerData.slotCount; i++)
         {
-            playerData.slotNums[i] = int.Parse(strings[i + 5]);
+            playerData.slotReelName[i] = int.Parse(strings[i + 5]);
         }
         print("PlayerData Loaded");
     }

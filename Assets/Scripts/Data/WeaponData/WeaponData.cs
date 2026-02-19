@@ -8,4 +8,5 @@ public class WeaponData : ScriptableObject
     public int weaponId;
     public Sprite weaponSprite;
     public List<SkillData> skills = new List<SkillData>();
+    public AnimatorOverrideController weaponAnimatorController;
 }

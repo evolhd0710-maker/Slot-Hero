@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     public Dictionary<int, RelicData> playerRelicData = new Dictionary<int, RelicData>();
     public List<WeaponData> weaponDatas = new List<WeaponData>();
     public int playerCurrentHp;
+    public int[,] playerSlotTable;
 
     private void Awake()
     {
@@ -17,6 +18,11 @@ public class GameManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+
     }
 
     void Update()

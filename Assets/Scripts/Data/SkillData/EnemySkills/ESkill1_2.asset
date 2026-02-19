@@ -15,7 +15,7 @@ MonoBehaviour:
   skillId: 0
   skillPriority: 0
   skillName: 
-  useSlotIndices: 
+  useSlotIndices: 00000000
   animationTrigger: 
   buffToApply: {fileID: 0}
   buffMagnitude: 0

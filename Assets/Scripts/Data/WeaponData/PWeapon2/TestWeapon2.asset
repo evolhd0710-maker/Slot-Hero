@@ -16,5 +16,6 @@ MonoBehaviour:
   weaponId: 1
   weaponSprite: {fileID: 0}
   skills:
-  - {fileID: 11400000, guid: f4eb324dda0781243b08f649091bd9ac, type: 2}
-  - {fileID: 11400000, guid: 77ea55654c204c9478ae31c7d050b3af, type: 2}
+  - {fileID: 11400000, guid: f433a93e0ad33cd479c69ddacdf6421d, type: 2}
+  - {fileID: 11400000, guid: 2ae32a7fc3967be4fa40165b198fad84, type: 2}
+  weaponAnimatorController: {fileID: 22100000, guid: a53abde8046a3744884bab598afa0ddc, type: 2}

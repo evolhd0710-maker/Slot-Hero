@@ -20,7 +20,7 @@ public class SlotManager : MonoBehaviour
     //슬롯 특정 부분만 보이도록 하는 스프라이트마스크
     public GameObject spriteMask;
     //슬롯 고정 효과 내기 위해 슬롯 위에 덮어두는 마스크
-    public GameObject slotFixOverlay;
+    public GameObject slotFixWindow;
     public SlotMask[] slotFixArr;
 
     public int[] slotValue;
@@ -35,6 +35,7 @@ public class SlotManager : MonoBehaviour
     }
     IEnumerator Start()
     {
+        //슬롯데이터 로딩될때까지 기다리는 코드 
         while (SlotDataReader.Instance == null || !SlotDataReader.Instance.IsReady)
         {
             yield return null;
@@ -72,48 +73,84 @@ public class SlotManager : MonoBehaviour
 
     void MakeSlot()
     {
-        for (int i = 0; i < slotSet.Length; i++)
-        {
-            slotSet[i] = Instantiate(emptyPrefab, slotPoint.transform.position + new Vector3(i, 0, 0), Quaternion.identity, slotControl.transform);
-        }
-        for (int i = 0; i < slotSet.Length; i++)
-        {
 
-            //슬롯테이블 채우기 위한 숫자
-            int num = 0;
-            //슬롯마다 한칸씩 밀기 위한 offset
-            int slotPositionOffset = 0;
-            int slotId;
-            if (owner == SlotOwner.Player)
+        //슬롯 변경되기 전, 슬롯데이터에서 슬롯 생성하는 코드
+        if(GameManager.Instance.playerSlotTable == null)
+        {
+            for (int i = 0; i < slotSet.Length; i++)
             {
-                slotId = PlayerDataReader.Instance.playerData.slotNums[i];
+                slotSet[i] = Instantiate(emptyPrefab, slotPoint.transform.position + new Vector3(i, 0, 0), Quaternion.identity, slotControl.transform);
             }
-            else
+            for (int i = 0; i < slotSet.Length; i++)
             {
-                slotId = enemy.slotNums[i];
-            }
-             //플레이어 슬롯 ID 받아와서 해당하는 슬롯 만든다.
-            GameObject tmpSlot = null;
-            for (int j = 0; j < 9; j++)
-            {
-
-                for (int k = 0; k < SlotDataReader.Instance.slots[slotId].slotIndex[j]; k++)
+                //슬롯마다 한칸씩 밀기 위한 offset
+                int slotPositionOffset = 0;
+                int slotId;
+                if (owner == SlotOwner.Player)
                 {
-                    slotTable[i, num++] = j + 1;
-                    if (tmpSlot == null)
+                    slotId = PlayerDataReader.Instance.playerData.slotReelName[i];
+                }
+                else
+                {
+                    slotId = enemy.slotNums[i];
+                }
+                //플레이어 슬롯 ID 받아와서 해당하는 슬롯 만든다.
+                int num = 0;
+                GameObject tmpSlot = null;
+                for (int j = 0; j < 9; j++)
+                {
+
+                    for (int k = 0; k < SlotDataReader.Instance.slots[slotId].slotIndex[j]; k++)
                     {
-                        tmpSlot = slotImg[j];
-                        Instantiate(spriteMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform);
-                        slotFixArr[i] = Instantiate(slotFixOverlay, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform).GetComponent<SlotMask>();
-                        slotFixArr[i].index = i;
+                        slotTable[i, num++] = j + 1; 
+                        if (tmpSlot == null)
+                        {
+                            tmpSlot = slotImg[j];
+                            Instantiate(spriteMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform);
+                            slotFixArr[i] = Instantiate(slotFixWindow, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform).GetComponent<SlotMask>();
+                            slotFixArr[i].index = i;
+                        }
+                        Instantiate(slotImg[j], slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
                     }
-                    Instantiate(slotImg[j], slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
+                }
+                //슬롯 회전 효과 주려면 시작과 끝이 동일해야함 그러기 위해서 처음 생성된 슬롯을 tmp 슬롯에 저장해서 마지막에 생성해준다.
+                if (tmpSlot != null)
+                {
+                    Instantiate(tmpSlot, slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
                 }
             }
-            //슬롯 회전 효과 주려면 시작과 끝이 동일해야함 그러기 위해서 처음 생성된 슬롯을 tmp 슬롯에 저장해서 마지막에 생성해준다.
-            if (tmpSlot != null)
+            printArr(slotTable);
+        }
+        //플레이어가 슬롯 변경한 후의 슬롯 불러오는 코드 
+        else
+        {
+            slotTable = GameManager.Instance.playerSlotTable;
+            for (int i = 0; i < slotSet.Length; i++)
             {
-                Instantiate(tmpSlot, slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
+                slotSet[i] = Instantiate(emptyPrefab, slotPoint.transform.position + new Vector3(i, 0, 0), Quaternion.identity, slotControl.transform);
+            }
+            for (int i = 0; i < slotSet.Length; i++)
+            {
+                //슬롯마다 한칸씩 밀기 위한 offset
+                int slotPositionOffset = 0;
+                int slotId;
+                GameObject tmpSlot = null;
+                for (int j = 0; j < 9; j++)
+                {
+                        if (tmpSlot == null)
+                        {
+                            tmpSlot = slotImg[slotTable[i,j]];
+                            Instantiate(spriteMask, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform);
+                            slotFixArr[i] = Instantiate(slotFixWindow, slotPoint.transform.position + new Vector3(i, slotPositionOffset, 0), Quaternion.identity, canvasTransform).GetComponent<SlotMask>();
+                            slotFixArr[i].index = i;
+                        }
+                        Instantiate(slotImg[slotTable[i, j]], slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
+                }
+                //슬롯 회전 효과 주려면 시작과 끝이 동일해야함 그러기 위해서 처음 생성된 슬롯을 tmp 슬롯에 저장해서 마지막에 생성해준다.
+                if (tmpSlot != null)
+                {
+                    Instantiate(tmpSlot, slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
+                }
             }
         }
     }
@@ -197,6 +234,7 @@ public class SlotManager : MonoBehaviour
 
     public void ReturnValue(int num)
     {
+        print(slotSet[num].transform.position.y);
         if (slotSet[num].transform.position.y == 0 || slotSet[num].transform.position.y == -9)
             slotValue[num] = slotTable[num, 0];
         else if (slotSet[num].transform.position.y == -1)
@@ -219,5 +257,20 @@ public class SlotManager : MonoBehaviour
 
 
 
+    void printArr(int[,] grid)
+    {
+        // 문자열 보간을 이용해 표 형태로 만들기
+        string result = "--- 3x9 Matrix ---\n";
+        for (int i = 0; i < grid.GetLength(0); i++) // 행(3)
+        {
+            for (int j = 0; j < grid.GetLength(1); j++) // 열(9)
+            {
+                result += grid[i, j] + "\t"; // 탭으로 간격 맞추기
+            }
+            result += "\n"; // 줄바꿈
+        }
+
+        Debug.Log(result);
+    }
 
 }

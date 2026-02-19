@@ -7,9 +7,14 @@ public abstract class UnitBase : MonoBehaviour
 {
     public CharacterData data;
     [SerializeField] private int currentHealth;
-    protected int shield;
+    public int shield;
     public List<Buff> activeBuffs = new List<Buff>();
+    public Animator anim { get; private set; }
 
+    protected virtual void Awake()
+    {
+        anim = GetComponent<Animator>();
+    }
     public int Health
     {
         get { return currentHealth; }
@@ -19,6 +24,7 @@ public abstract class UnitBase : MonoBehaviour
              currentHealth = Mathf.Clamp(value, 0, data.maxHealth);
         }
     }
+
 
     public virtual void Setup()
     {

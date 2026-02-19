@@ -12,6 +12,7 @@ public class Enemy : UnitBase
     public SkillData[] skills;
     private void Awake()
     {
+        base.Awake();
     }
 
 }

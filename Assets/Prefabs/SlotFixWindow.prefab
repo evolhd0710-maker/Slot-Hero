@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7619747359172719250}
   - component: {fileID: 7189277621650896537}
   m_Layer: 0
-  m_Name: SlotSelect
+  m_Name: SlotFixWindow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

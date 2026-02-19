@@ -22,20 +22,23 @@ public class CombatManager : MonoBehaviour
     RelicData[] playerRelics;
     private int rerollCount;
     public SkillData  playerSelectedSkill;
-    public WeaponData currentWeapon;
+    private WeaponData currentWeapon;
     int cp;
     int pNum;
+    public Animator playerAnimator;
     //적 관련 변수 
     public Enemy enemy;
     int ecp;
     int eNum;
     public SkillData enemySelectedSkill;
+    public Animator enemyAnimator;
 
     //UI
     public Text relicText, phaseText; //phase text 는 임시 
     public Button button1, button2, rollButton;
     private bool isWaitingUserInput, skillPressed, rollPressed;
     public Animator textAnimator;
+    public Hp playerHp, enemyHp;
     //다른 매니저
     public SlotManager slotManager;
     public SlotManager enemySlotManager;
@@ -51,6 +54,7 @@ public class CombatManager : MonoBehaviour
         currentState = BattleState.Idle;
         player.Setup();
         enemy.Setup();
+        UpdateHp();
         isTurnEnd = false;
         StartCoroutine(TurnStarter());
 
@@ -66,21 +70,17 @@ public class CombatManager : MonoBehaviour
 
     IEnumerator TurnStarter()
     {
-        // 누군가 죽을 때까지(HP가 0 이하가 될 때까지) 무한 반복
         while (player.Health > 0 && enemy.Health > 0)
         {
-            // 1. 각 페이즈 순차 실행
             yield return StartCoroutine(StartPhase());
             yield return StartCoroutine(RollPhase());
             yield return StartCoroutine(CombatPhase());
 
-            // 2. 한 턴이 끝난 후 잠깐의 휴식 (애니메이션 대기 등)
             yield return new WaitForSeconds(1.0f);
 
             Debug.Log("턴 종료.");
         }
 
-        // 3. 루프를 빠져나왔다면 누군가 죽었다는 뜻
         BattleResult();
     }
     //전투 시작 전 처리하는 요소 : 유물 효과, 적 스킬 선택 
@@ -123,12 +123,7 @@ public class CombatManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);  
 
-        cp = slotManager.slotValue.Sum();
-        ecp = enemySlotManager.slotValue.Sum();
 
-        //아래 두 줄은 나중에 애니메이션이나 효과로 대체해야함
-        Debug.Log("player combat power : " + cp);
-        Debug.Log("enemy combat power : " + ecp);
         yield return new WaitForSeconds(1.0f);
         //스킬 순서 결정
         bool isPlayerFirst;
@@ -144,27 +139,29 @@ public class CombatManager : MonoBehaviour
         if (isPlayerFirst)
         {
             playerSelectedSkill.ExecuteSkill(player, enemy, pNum);
-            yield return new WaitForSeconds(1f); // 스킬 연출 시간만큼 대기
-
-            if (enemy.Health > 0) // 적이 죽지 않았을 때만 반격
+            yield return new WaitForSeconds(1f);
+            UpdateHp();
+            if (enemy.Health > 0) 
             {
                 enemySelectedSkill.ExecuteSkill(enemy, player, eNum);
                 yield return new WaitForSeconds(1f);
+                UpdateHp();
             }
         }
         else
         {
             enemySelectedSkill.ExecuteSkill(enemy, player, eNum);
             yield return new WaitForSeconds(1f);
-
+            UpdateHp();
             if (player.Health > 0)
             {
                 playerSelectedSkill.ExecuteSkill(player, enemy, pNum);
                 yield return new WaitForSeconds(1f);
+                UpdateHp();
             }
         }
-
-        yield return null;
+        TurnEnd();
+        UpdateHp();
         isTurnEnd = true;
     }
     //StartPhase Function 
@@ -234,11 +231,17 @@ public class CombatManager : MonoBehaviour
         currentWeapon = weapon;
         button1.GetComponent<SkillButton>().mySkillData = weapon.skills[0];
         button2.GetComponent<SkillButton>().mySkillData = weapon.skills[1];
+        player.GetComponent<Animator>().runtimeAnimatorController = weapon.weaponAnimatorController;
     }
 
     //CombatPhaseFunction
     private void CalculateAndCompareCP()
     {
+        cp = slotManager.slotValue.Sum();
+        ecp = enemySlotManager.slotValue.Sum();
+        //아래 두 줄은 나중에 애니메이션이나 효과로 대체해야함
+        Debug.Log("player combat power : " + cp);
+        Debug.Log("enemy combat power : " + ecp);
         pNum = playerSelectedSkill.CalculateNumber(slotManager.slotValue);
         print("플레이어 숫자 : " + pNum);
         eNum = enemySelectedSkill.CalculateNumber(enemySlotManager.slotValue);
@@ -260,6 +263,11 @@ public class CombatManager : MonoBehaviour
             print("결투력 패배. 플레이어 숫자 (" + pNum + ") 으로 조정됨");
         }
     }
+    private void TurnEnd()
+    {
+        player.shield = 0;
+        enemy.shield = 0;
+    }
 
     void BattleResult()
     {
@@ -267,6 +275,12 @@ public class CombatManager : MonoBehaviour
             Debug.Log("플레이어 패배...");
         else
             Debug.Log("플레이어 승리!");
+    }
+
+    void UpdateHp()
+    {
+        playerHp.SetUp(player.data.maxHealth, player.Health, player.shield);
+        enemyHp.SetUp(enemy.data.maxHealth, enemy.Health, enemy.shield);
     }
 }
 

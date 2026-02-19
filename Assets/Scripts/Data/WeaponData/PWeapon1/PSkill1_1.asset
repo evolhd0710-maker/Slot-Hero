@@ -15,8 +15,8 @@ MonoBehaviour:
   skillId: 0
   skillPriority: 2
   skillName: "\uAC80\uBC29\uD328 1\uBC88\uC2A4\uD0AC \uACF5\uACA9"
-  useSlotIndices: 00000000
-  animationTrigger: 
+  useSlotIndices: 000000000100000002000000
+  animationTrigger: Skill1
   buffToApply: {fileID: 0}
   buffMagnitude: 0
   buffDuration: 0

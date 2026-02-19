@@ -29,5 +29,6 @@ public class SkillData : ScriptableObject
 
     public virtual void ExecuteSkill(UnitBase caster, UnitBase target, int num)
     {
+        caster.anim.SetTrigger(animationTrigger);
     }
 }
