@@ -1,0 +1,4 @@
+순번,스킬 ID,스킬 닉네임,참조용,스킬 방식,A계수,B계수,C계수,D계수,E계수,혹은 그이상,효과1,효과2,효과3,효과4,모션&이펙트,트레잇1,트레잇2,트레잇3,결투력 보정
+No,Skill_ID,Skill_Name,스킬 이름,Skill_Modification,Skill_SlotA_Scailing,Skill_SlotB_Scailing,Skill_SlotC_Scailing,Skill_SlotD_Scailing,Skill_SlotE_Scailing,,,,,,Skill_Motion,Skill_TraitA,Skill_TraitB,Skill_TraitC,Skill_Duel_Correction
+int,int,string,,string,int,int,int,int,int,,,,,,string,string,string,string,int
+1,1000,Strike,돌진,A+B+C,10000,10000,10000,0,0,,target:Damage:SlotValue:10000,target:Damage:SlotValue:10000,target:Damage:SlotValue:10000,target:Damage:SlotValue:10000,,,,,

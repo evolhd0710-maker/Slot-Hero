@@ -126,12 +126,12 @@ public class CombatManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);
         //스킬 순서 결정
-        bool isPlayerFirst;
-        if(playerSelectedSkill.skillPriority >= enemySelectedSkill.skillPriority)
+        bool isPlayerFirst = true;
+        /*if(playerSelectedSkill.skillPriority >= enemySelectedSkill.skillPriority)
             isPlayerFirst = true;
         else
             isPlayerFirst = false; 
-        
+        */
         CalculateAndCompareCP();
 
         yield return new WaitForSeconds(1.0f);

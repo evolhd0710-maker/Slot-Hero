@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8387336215184438760
 RectTransform:
   m_ObjectHideFlags: 0
@@ -167,7 +167,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4638709875151516582
 RectTransform:
   m_ObjectHideFlags: 0
@@ -256,8 +256,8 @@ RectTransform:
   m_LocalScale: {x: 0.3, y: 0.3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8387336215184438760}
   - {fileID: 7161067384116238176}
+  - {fileID: 8387336215184438760}
   - {fileID: 4638709875151516582}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -314,7 +314,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 1339740204505298961}
+  m_TargetGraphic: {fileID: 6426785821754495670}
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
@@ -343,6 +343,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nodeIndex: 0
-  nodeImage: []
   nodeCoordinate: 0000000000000000
   mapManager: {fileID: 0}
+  isSelectable: 0
+  nodeButton: {fileID: 0}
