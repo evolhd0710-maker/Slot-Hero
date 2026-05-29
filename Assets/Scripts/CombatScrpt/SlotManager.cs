@@ -43,20 +43,20 @@ public class SlotManager : MonoBehaviour
         //플레이어 슬롯
         if (owner == SlotOwner.Player)
         {
-            int slotCount = PlayerDataReader.Instance.playerData.slotCount;
+            int slotCount = 3;
             // slotset 은 각 릴을 의미 slotTalbe은 각 슬롯의 숫자 구성을 저장, slotaValue는 각 슬롯의 값을 저장한다.
             slotSet = new GameObject[slotCount];
             slotTable = new int[slotCount, 9];
             slotFixArr = new SlotMask[slotCount];
-            slotValue = new int[slotSet.Length];
+            slotValue = new int[] {0,0,0,0,0 };
             MakeSlot();
         }
         //적 슬롯
         else
         {
-            int slotCount = enemy.slotCount;
+            int slotCount = 3;
             slotSet = new GameObject[slotCount];
-            slotValue = new int[slotSet.Length];
+            slotValue = new int[] { 0, 0, 0, 0, 0 };
             slotFixArr = new SlotMask[slotCount];
             slotTable = new int[slotCount, 9];
             MakeSlot();
@@ -119,7 +119,6 @@ public class SlotManager : MonoBehaviour
                     Instantiate(tmpSlot, slotPoint.transform.position + new Vector3(i, slotPositionOffset++, 0), Quaternion.identity, slotSet[i].transform);
                 }
             }
-            printArr(slotTable);
         }
         //플레이어가 슬롯 변경한 후의 슬롯 불러오는 코드 
         else
@@ -234,7 +233,6 @@ public class SlotManager : MonoBehaviour
 
     public void ReturnValue(int num)
     {
-        print(slotSet[num].transform.position.y);
         if (slotSet[num].transform.position.y == 0 || slotSet[num].transform.position.y == -9)
             slotValue[num] = slotTable[num, 0];
         else if (slotSet[num].transform.position.y == -1)

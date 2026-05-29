@@ -10,42 +10,28 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52c99265a6501264c91ea1b27ff04197, type: 3}
-  m_Name: Skill_1000
+  m_Name: Skill_2000
   m_EditorClassIdentifier: 
-  skillId: 1000
-  skillName: "\uD0C0\uACA9"
+  skillId: 2000
+  skillName: "\uB3C5\uB2E8\uAC80"
   coEff:
   - 1
   - 1
   - 1
-  - 0
-  - 0
+  - 1
+  - 1
   skillIcon: {fileID: 0}
   description: 
   animation: 
   effectTargetType: 0
   effects:
-  - effectBlueprint: {fileID: 11400000, guid: 45f5ba27dda1f8d4b92d252e4482ba19, type: 2}
+  - effectBlueprint: {fileID: 11400000, guid: eb3ed97c31bdddf4880926ba12d83b5b, type: 2}
     flexAmount:
-      valueType: 1
-      constantValue: 0
+      valueType: 0
+      constantValue: 3
     chance: 0
     targetType: 0
-    effectName: InstantDamage
-  - effectBlueprint: {fileID: 11400000, guid: 45f5ba27dda1f8d4b92d252e4482ba19, type: 2}
-    flexAmount:
-      valueType: 1
-      constantValue: 0
-    chance: 0
-    targetType: 0
-    effectName: InstantDamage
-  - effectBlueprint: {fileID: 11400000, guid: 45f5ba27dda1f8d4b92d252e4482ba19, type: 2}
-    flexAmount:
-      valueType: 1
-      constantValue: 0
-    chance: 0
-    targetType: 0
-    effectName: InstantDamage
+    effectName: Poison
   - effectBlueprint: {fileID: 11400000, guid: 45f5ba27dda1f8d4b92d252e4482ba19, type: 2}
     flexAmount:
       valueType: 1

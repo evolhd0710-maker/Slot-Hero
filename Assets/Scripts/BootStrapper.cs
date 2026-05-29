@@ -8,7 +8,7 @@ public class BootStrapper : MonoBehaviour
     {
         PlayerDataReader.Instance.Load();
         SlotDataReader.Instance.Load();
-        RelicDatabase.instance.Load();
+        //RelicDatabase.instance.Load();
     }
 
     // Update is called once per frame

@@ -9,7 +9,7 @@ public class Enemy : UnitBase
     public int weapon;
     public int slotCount;
     public int[] slotNums;
-    public SkillData[] skills;
+    public SkillSO[] skills;
     private void Awake()
     {
         base.Awake();

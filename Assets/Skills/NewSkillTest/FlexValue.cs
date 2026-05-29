@@ -14,7 +14,6 @@ public struct FlexValue
     {
         if (valueType == VariableType.Constant)
         {
-            Debug.Log("상수");
             return constantValue;
         }
 
@@ -26,7 +25,6 @@ public struct FlexValue
                 {
                     slotSum += slotValues[i] * coEff[i];
                 }
-                Debug.Log("SlotValue로 작동 현재값 : " + slotSum);
                 return slotSum;
             default:
                 Debug.Log("디폴트");

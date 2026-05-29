@@ -6,6 +6,5 @@ public class PlayerSkill1_1 : SkillData
     public override void ExecuteSkill(UnitBase caster, UnitBase target, int num)
     {
         base.ExecuteSkill(caster, target, num);
-        target.TakeDamage(num);
     }
 }

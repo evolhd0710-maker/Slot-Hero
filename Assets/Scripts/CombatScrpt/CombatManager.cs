@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using Unity.VisualScripting;
+using System;
+using UnityEngine.SceneManagement;
 
 public class CombatManager : MonoBehaviour
 {
@@ -17,20 +19,24 @@ public class CombatManager : MonoBehaviour
     private BattleState currentState;
     int[] slotNum = {1, 1, 1}; // 플레이어가 가진 슬롯 표현하기 위한 변수 일단 지금은 내가 입력했음 나중에 플레이어 데이터에서 직접 받아와야 함 
     private bool isTurnEnd;
+    bool isPlayerFirst;
+    //현재 턴의 주인이 누구인지에 따라 Tick과 Decay 발동하기 위한 변수
+    public static Action<GameObject, TickTiming> OnTickTimingTriggered;
+    public static Action<GameObject, DecayTiming> OnDecayTimingTriggered;
     //플레이어 관련 변수 
-    public Player player;
+    public GameObject player;
     RelicData[] playerRelics;
     private int rerollCount;
-    public SkillData  playerSelectedSkill;
+    public SkillSO  playerSelectedSkill;
     private WeaponData currentWeapon;
     int cp;
     int pNum;
     public Animator playerAnimator;
     //적 관련 변수 
-    public Enemy enemy;
+    public GameObject enemy;
     int ecp;
     int eNum;
-    public SkillData enemySelectedSkill;
+    public SkillSO enemySelectedSkill;
     public Animator enemyAnimator;
 
     //UI
@@ -45,15 +51,11 @@ public class CombatManager : MonoBehaviour
     public GameManager gameManager;
     void Start()
     {
- 
-        //아래 두 줄은 유물 발생을 테스트하기 위해서 임시로 넣은 코드임
-        gameManager.AchieveRelic(1);
-        gameManager.AchieveRelic(2);
-        playerRelics = gameManager.GetRelicDatas();
+
         rerollCount = 1;
         currentState = BattleState.Idle;
-        player.Setup();
-        enemy.Setup();
+        player.GetComponent<Player>().Setup();
+        enemy.GetComponent<Enemy>().Setup();
         UpdateHp();
         isTurnEnd = false;
         StartCoroutine(TurnStarter());
@@ -70,7 +72,7 @@ public class CombatManager : MonoBehaviour
 
     IEnumerator TurnStarter()
     {
-        while (player.Health > 0 && enemy.Health > 0)
+        while (player.GetComponent<Player>().Health > 0 && enemy.GetComponent<Enemy>().Health > 0)
         {
             yield return StartCoroutine(StartPhase());
             yield return StartCoroutine(RollPhase());
@@ -126,7 +128,7 @@ public class CombatManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);
         //스킬 순서 결정
-        bool isPlayerFirst = true;
+
         /*if(playerSelectedSkill.skillPriority >= enemySelectedSkill.skillPriority)
             isPlayerFirst = true;
         else
@@ -138,26 +140,34 @@ public class CombatManager : MonoBehaviour
 
         if (isPlayerFirst)
         {
-            playerSelectedSkill.ExecuteSkill(player, enemy, pNum);
+            StartCharacterTurn(player);
+            playerSelectedSkill.UseSkill(player, enemy, slotManager.slotValue);
+            EndCharacterTurn(player);
             yield return new WaitForSeconds(1f);
             UpdateHp();
-            if (enemy.Health > 0) 
+            if (enemy.GetComponent<Enemy>().Health > 0) 
             {
-                enemySelectedSkill.ExecuteSkill(enemy, player, eNum);
+                StartCharacterTurn(enemy);
+                enemySelectedSkill.UseSkill(enemy,player, enemySlotManager.slotValue);   
                 yield return new WaitForSeconds(1f);
+                EndCharacterTurn(enemy);
                 UpdateHp();
             }
         }
         else
         {
-            enemySelectedSkill.ExecuteSkill(enemy, player, eNum);
-            yield return new WaitForSeconds(1f);
+            StartCharacterTurn(enemy);
+            enemySelectedSkill.UseSkill(enemy, player, enemySlotManager.slotValue);
+            EndCharacterTurn(enemy);
             UpdateHp();
-            if (player.Health > 0)
+            yield return new WaitForSeconds(1f);
+            if (player.GetComponent<Player>().Health > 0)
             {
-                playerSelectedSkill.ExecuteSkill(player, enemy, pNum);
-                yield return new WaitForSeconds(1f);
+                StartCharacterTurn(player);
+                playerSelectedSkill.UseSkill(player, enemy, slotManager.slotValue);
+                EndCharacterTurn(player);
                 UpdateHp();
+                yield return new WaitForSeconds(1f);
             }
         }
         TurnEnd();
@@ -167,20 +177,12 @@ public class CombatManager : MonoBehaviour
     //StartPhase Function 
     IEnumerator ActivateRelics()
     {
-        relicText.gameObject.SetActive(true);
-        //현재는 유물이 텍스트만 띄우고 있지만 추후 유물의 실제 효과도 적용해야 함
-        foreach(RelicData i in playerRelics)
-        {
-            relicText.text = "Relic [" + i.num + "] Activated";
-            textAnimator.Play("Relic Text", 0, 0f);
-            yield return new WaitForSeconds(1f);
-        }
-        relicText.gameObject.SetActive(false);
+        yield return null;
     }
     void EnemyMoveAlloc()
     {
         //1. 사용가능 여부 확인 2. 사용가능 스킬 중에서 랜덤 선택하여 사용(MoveIndex 에 skill 배열의 index 를 할당) 
-        enemySelectedSkill = enemy.skills[Random.Range(0, 2)];
+        enemySelectedSkill = enemy.GetComponent<Enemy>().skills[UnityEngine.Random.Range(0,2)];
     }
     void WaitUserInput()
     {
@@ -226,13 +228,7 @@ public class CombatManager : MonoBehaviour
         yield return null;
     }
 
-    public void EquipWeapon(WeaponData weapon)
-    {
-        currentWeapon = weapon;
-        button1.GetComponent<SkillButton>().mySkillData = weapon.skills[0];
-        button2.GetComponent<SkillButton>().mySkillData = weapon.skills[1];
-        player.GetComponent<Animator>().runtimeAnimatorController = weapon.weaponAnimatorController;
-    }
+
 
     //CombatPhaseFunction
     private void CalculateAndCompareCP()
@@ -242,45 +238,76 @@ public class CombatManager : MonoBehaviour
         //아래 두 줄은 나중에 애니메이션이나 효과로 대체해야함
         Debug.Log("player combat power : " + cp);
         Debug.Log("enemy combat power : " + ecp);
-        pNum = playerSelectedSkill.CalculateNumber(slotManager.slotValue);
-        print("플레이어 숫자 : " + pNum);
-        eNum = enemySelectedSkill.CalculateNumber(enemySlotManager.slotValue);
-        print("적 숫자 : " + eNum);
 
         if (ecp < cp)
         {
-            eNum /= 2;
-            print("결투력 승리. 적 숫자 (" + eNum + ") 으로 조정됨");
+            print("결투력 승리. 플레이어 먼저 행동");
+            isPlayerFirst = true;   
+
         }
         else if (ecp == cp)
         {
             print("결투력 동등");
-
+            isPlayerFirst = true;
         }
         else
         {
-            pNum /= 2;
-            print("결투력 패배. 플레이어 숫자 (" + pNum + ") 으로 조정됨");
+            print("결투력 패배. 적 먼저 행동");
+            isPlayerFirst = false;
         }
     }
     private void TurnEnd()
     {
-        player.shield = 0;
-        enemy.shield = 0;
+        player.GetComponent<Player>().shield = 0;
+        enemy.GetComponent<Enemy>().shield = 0;
     }
 
     void BattleResult()
     {
-        if (player.Health <= 0)
+        if (player.GetComponent<Player>().Health <= 0)
             Debug.Log("플레이어 패배...");
         else
+        {
             Debug.Log("플레이어 승리!");
+            OnWin();
+        }
     }
 
     void UpdateHp()
     {
-        playerHp.SetUp(player.data.maxHealth, player.Health, player.shield);
-        enemyHp.SetUp(enemy.data.maxHealth, enemy.Health, enemy.shield);
+        playerHp.SetUp(player.GetComponent<Player>().data.maxHealth, player.GetComponent<Player>().Health, player.GetComponent<Player>().shield);
+        enemyHp.SetUp(enemy.GetComponent<Enemy>().data.maxHealth, enemy.GetComponent<Enemy>().Health, enemy.GetComponent<Enemy>().shield);
+    }
+
+    public void StartCharacterTurn(GameObject activeCharacter)
+    {
+        Debug.Log($"[{activeCharacter.name}]의 턴 시작 페이즈");
+
+        OnTickTimingTriggered?.Invoke(activeCharacter, TickTiming.TurnStart);
+        OnDecayTimingTriggered?.Invoke(activeCharacter, DecayTiming.TurnStart);
+    }
+
+    public void EndCharacterTurn(GameObject activeCharacter)
+    {
+        Debug.Log($"[{activeCharacter.name}]의 턴 시작 페이즈");
+
+        OnTickTimingTriggered?.Invoke(activeCharacter, TickTiming.TurnEnd);
+        OnDecayTimingTriggered?.Invoke(activeCharacter, DecayTiming.TurnEnd);
+    }
+
+    public void OnWin()
+    {
+        // 1. 메모리에 살아있는 MapManager를 찾습니다.
+        MapManager mapManager = FindObjectOfType<MapManager>();
+
+        if (mapManager != null)
+        {
+            // 2. 맵 매니저에게 맵 오브젝트들을 다시 켜라고 명령합니다.
+            mapManager.ReturnToMap();
+        }
+
+        // 3. 현재 켜져 있는 전투 씬(나 자신) 종이만 싹 걷어내서 파괴합니다.
+        SceneManager.UnloadSceneAsync(1);
     }
 }
 

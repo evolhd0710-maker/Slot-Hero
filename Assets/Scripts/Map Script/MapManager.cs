@@ -176,10 +176,26 @@ public class MapManager : MonoBehaviour
 
     public void OnNodeSelected(Node targetNode)
     {
+        /*
         // 1. 기존 하이라이트 모두 끄기 (현재 가능한 노드들만)
         foreach (Node next in currentNode.nextNodes)
         {
             next.SetHighlight(false);
+        }
+        */
+
+        if (targetNode != logicalStartNode)
+        {
+            int tmp = targetNode.nodeCoordinate[1];
+
+            for (int i = 0; i < 7; i++)
+            {
+                if (nodes[i, tmp] != null)
+                {
+                    nodes[i, tmp].GetComponent<Button>().interactable = false;
+
+                }
+            }
         }
 
         // 2. 위치 이동
@@ -191,5 +207,24 @@ public class MapManager : MonoBehaviour
             next.SetHighlight(true);
         }
 
+        if (targetNode != logicalStartNode)
+        {
+            if (targetNode.nodeCoordinate[1] == 15)
+            {
+                SceneManager.LoadScene("BossBattleScene", LoadSceneMode.Additive);
+            }
+            else
+            {
+                if (canvas != null) canvas.SetActive(false); // 맵 화면 잠시 접기
+                SceneManager.LoadScene(1, LoadSceneMode.Additive);
+            }
+        }
+
+    }
+
+    public void ReturnToMap()
+    {
+        // 꺼두었던 맵 오브젝트를 다시 켜기만 하면 원래 상태 그대로 보입니다!
+        if (canvas != null) canvas.SetActive(true);
     }
 }

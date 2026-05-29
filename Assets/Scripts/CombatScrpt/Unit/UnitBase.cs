@@ -31,7 +31,7 @@ public abstract class UnitBase : MonoBehaviour
         Health = data.maxHealth;
     }
 
-    public virtual void TakeDamage(int damage)
+    public virtual void TakeDamage(int damage, string reason)
     {
         if (shield > 0)
         {
@@ -48,7 +48,7 @@ public abstract class UnitBase : MonoBehaviour
         }
 
         Health -= damage;
-        print($"{data.name}에 {damage} 데미지 부여 남은체력 {Health}");
+        print($"{data.name}에 {damage} 데미지 부여 남은체력 {Health} : {reason}");
     }
 
     public virtual void AddShield(int num)

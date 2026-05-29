@@ -3,13 +3,13 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 //스킬 데이터를 CSV에서 파싱하는 코드 
-public class SkillCardParser
+public class SkillParser
 {
     [MenuItem("Tools/Parse Skill CSV")]
     public static void ParseCSV()
     {
         string csvPath = Path.Combine(Application.dataPath, "Skills/SkillData.csv");
-        string targetFolder = "Assets/Skills/SkillAssests";
+        string targetFolder = "Assets/Skills/SkillAssets";
 
         if (!File.Exists(csvPath))
         {
@@ -24,10 +24,10 @@ public class SkillCardParser
             return;
         }
 
-        string systemFolderPath = Path.Combine(Application.dataPath, "Skills/SkillAssets");
-        if (!Directory.Exists(systemFolderPath))
+
+        if (!Directory.Exists(targetFolder))
         {
-            Directory.CreateDirectory(systemFolderPath);
+            Directory.CreateDirectory(targetFolder);
         }
 
         int successCount = 0;
@@ -39,6 +39,10 @@ public class SkillCardParser
 
             string[] data = csvLine.Split(',');
 
+            if (data.Length < 3 || string.IsNullOrWhiteSpace(data[1]) || !int.TryParse(data[1].Trim(), out int skillId))
+            {
+                continue;
+            }
             SkillSO newSkill = ScriptableObject.CreateInstance<SkillSO>();
 
             newSkill.skillId = int.Parse(data[1]);
@@ -59,27 +63,29 @@ public class SkillCardParser
                     if (effectToken.Length < 4) continue;
 
                     string effectTargetType = effectToken[0].Trim();
-                    string effectName = effectToken[1].Trim();
+                    string effectCode = effectToken[1].Trim();
                     string effectNumType = effectToken[2].Trim();
                     int effectChance = int.Parse(effectToken[3]); 
 
-                    string effectPath = $"Assets/Skills/Effects/{effectName}Effect.asset";
-                    SkillEffect blueprint = AssetDatabase.LoadAssetAtPath<SkillEffect>(effectPath);
+                    string effectPath = $"Assets/Skills/Effects/Effect_{effectCode}.asset";
+                    EffectSO blueprint = AssetDatabase.LoadAssetAtPath<EffectSO>(effectPath);
 
                     if (blueprint != null)
                     {
                         SkillSO.EffectContainer container = new SkillSO.EffectContainer();
                         container.effectBlueprint = blueprint;
-                        container.effectName = effectName;
+                        container.effectName = effectCode;
                         
                         System.Enum.TryParse<EffectTargetType>(effectTargetType, true, out container.targetType);
-                        System.Enum.TryParse<VariableType>(effectNumType, true, out container.flexAmount.valueType);
+                        if (int.TryParse(effectNumType, out container.flexAmount.constantValue)) ;
+                        else
+                            System.Enum.TryParse<VariableType>(effectNumType, true, out container.flexAmount.valueType);
 
                         newSkill.effects.Add(container);
                     }
                     else
                     {
-                        Debug.LogWarning($"{effectName} 리소스 {effectPath} 에 없음 {newSkill.skillName}");
+                        Debug.LogWarning($"{effectCode} 리소스 {effectPath} 에 없음 {newSkill.skillName}");
                     }
                 }
             }

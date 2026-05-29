@@ -7,6 +7,5 @@ public class EnemySKill1_1:SkillData
     {
         base.ExecuteSkill(caster, target, num);
         base.ExecuteSkill(caster, target, num);
-        target.TakeDamage(num);
     }
 }

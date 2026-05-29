@@ -31,18 +31,32 @@ public enum DecayTiming
     TurnEnd,
     TurnStart
 }
+
+public enum EffectClassType
+
+{
+    InstantDamage,
+    DotDamage,
+    StatBuff
+
+}
 [CreateAssetMenu(fileName = "SkillEffect", menuName = "Scriptable Objects/SkillEffect")]
-public abstract class SkillEffect : ScriptableObject
+public abstract class EffectSO : ScriptableObject
 {
 
 
     public int effectId;
-    public int effectCode;
+    public string effectCode;
     public DurationType durationType;
+    public TickTiming tickTiming;
+    public StackType stackType;
+    public DecayType decayType;
+    public DecayTiming decayTiming;
     public int maxStacks;
-    public int DecayValue;
+    public int decayValue;
     public int effectOrder;
     public Sprite effectIcon;
+    public EffectClassType effectClassType;
 
     public abstract void Execute(GameObject caster, GameObject target, int amount);
 }

@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class SkillButton : MonoBehaviour
 {
-    public SkillData mySkillData;
+    public SkillSO mySkillData;
     public CombatManager combatManager;
     void Start()
     {
@@ -17,7 +17,7 @@ public class SkillButton : MonoBehaviour
         combatManager.playerSelectedSkill = mySkillData;
     }
 
-    public void SetSkill(SkillData skill)
+    public void SetSkill(SkillSO skill)
     {
         mySkillData = skill;
     }

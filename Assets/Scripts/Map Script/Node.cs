@@ -31,8 +31,7 @@ public class Node : MonoBehaviour
 
     public void SetHighlight(bool On)
     {
-        isSelectable = On;
-
+        this.GetComponent<Button>().interactable = On;
         // 버튼의 Image 컴포넌트가 있는지 확인 후 색상 변경
         if (nodeButton.targetGraphic != null)
         {

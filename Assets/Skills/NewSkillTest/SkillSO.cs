@@ -20,7 +20,7 @@ public class SkillSO : ScriptableObject
     [System.Serializable]
     public struct EffectContainer
     {
-        public SkillEffect effectBlueprint;
+        public EffectSO effectBlueprint;
         public FlexValue flexAmount;
         public int chance;
         public EffectTargetType targetType;
@@ -62,17 +62,35 @@ public class SkillSO : ScriptableObject
             if (container.effectBlueprint != null)
             {
 
-                int finalAmount = (int)container.flexAmount.ResolveValue(coEff, slotValues);
-                Debug.Log(finalAmount);
-                
+                int finalAmount = (int)container.flexAmount.ResolveValue(coEff, slotValues);                
                 GameObject realTarget = target;
                 if (container.targetType == EffectTargetType.Caster)
                 {
                     realTarget = caster; 
                 }
 
-               
-                container.effectBlueprint.Execute(caster, realTarget, finalAmount);
+               switch (container.effectBlueprint.effectClassType)
+                {
+                    case EffectClassType.InstantDamage:
+                        // 1. 즉발 데미지는 버프 핸들러 없이 그 자리에서 즉시 진짜 행동(Execute)을 시킵니다.
+                        container.effectBlueprint.Execute(caster, realTarget, finalAmount);
+                        break;
+
+                    case EffectClassType.DotDamage:
+                    case EffectClassType.StatBuff:
+                        // 2. 도트 데미지나 상시 스탯 버프는 BuffHandler를 찾아 등록만 해줍니다.
+                        BuffHandler handler = realTarget.GetComponent<BuffHandler>();
+                        if (handler != null)
+                        {
+                            int duration = container.flexAmount.constantValue; 
+                            handler.AddBuff(container.effectBlueprint, caster, finalAmount, duration);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"{realTarget.name}에게 BuffHandler 컴포넌트가 없습니다! 효과를 등록할 수 없습니다.");
+                        }
+                        break;
+                }
             }
             else
             {
