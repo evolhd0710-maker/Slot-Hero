@@ -1,0 +1,9 @@
+순번,효과코드,효과명,효과 종류,지속 시간 방식,발동 타이밍,중첩 처리 방식 ,최대중첩횟수 ? 필요한진 의,스택 감소 형태,스택 감소 수치 ,스택 감소 시기,발동 순번,효과 아이콘
+No,Effect_Code,Effect_Name,Effect_Type,Duration_Type,Tick_Timing,Stack_Type,Max_Stacks,Decay_Type,Decay_Value,Decay_Timing,Effect_Order,Effect_Icon
+int,string,string,enum,enum,enum,enum,int,enum,int,enum,int,string
+1,InstantDamage,직접 타격,InstantDamage,Instant,None,None,1,None,0,None,,
+2,Poison,독,DotDamage,StackBased,TurnStart,Intensity,99,Constant,1,TurnEnd,,
+3,Strength,힘 증가,StatBuff,TurnBased,None,Intensity,99,None,0,None,,
+4,,,,,,,,,,,,
+5,,,,,,,,,,,,
+6,,,,,,,,,,,,
