@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Monument
   m_EditorClassIdentifier: 
   symbolType: 5
-  symbolSprite: {fileID: 3422136323191098528, guid: f40c7face2affa4458a0989dab043772, type: 3}
+  symbolSprite: {fileID: 3422136323191098528, guid: a4296f70576f4164680b37c4dca2a789, type: 3}
   symbolTags: 
   baseAttack: 0
   baseDefense: 0
   basicEffects:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 28104b1698244b340b28de1b46b47200, type: 2}
   specialEffects: []

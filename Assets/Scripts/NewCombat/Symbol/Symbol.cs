@@ -1,8 +1,6 @@
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public enum SymbolTag
 {
@@ -31,85 +29,126 @@ public class Symbol : ScriptableObject
     [Header("기본 정보")]
     public SymbolType symbolType;
     public Sprite symbolSprite;
-    public List<SymbolTag> symbolTags;
+    public List<SymbolTag> symbolTags = new List<SymbolTag>();
 
     [Header("무기 고유 스탯")]
     public int baseAttack;
     public int baseDefense;
 
     [Header("이 무기가 발동할 효과들")]
-    public List<SymbolEffect> basicEffects;
-    public List<SymbolEffect> specialEffects;
+    public List<SymbolEffect> basicEffects = new List<SymbolEffect>();
+    public List<SymbolEffect> specialEffects = new List<SymbolEffect>();
 
+    [Header("실행 연출")]
+    [SerializeField] private float effectInterval = 0.3f;
+    [SerializeField] private float pulseScale = 1.3f;
 
-    public IEnumerator Execute(NewPlayer player, NewEnemy enemy, TurnContext context, int countInTurn, RectTransform targetUI)
+    public IEnumerator Execute(NewPlayer player, NewEnemy enemy, TurnContext turnContext, int countInTurn, RectTransform targetUI, RelicController relicController = null, bool isReplay = false)
     {
-        int damageSnapshot = context.totalDamage;
-        int defenseSnapshot = context.totalDefense;
+        Debug.Log($"[Symbol.Execute 시작] {symbolType}, Count: {countInTurn}, Frame: {Time.frameCount}");
 
-        foreach (var effect in specialEffects)
+        if (player == null)
         {
-            if (targetUI != null)
+            Debug.LogError($"{name} 실행 실패: Player가 없습니다.");
+            yield break;
+        }
+
+        if (enemy == null)
+        {
+            Debug.LogError($"{name} 실행 실패: Enemy가 없습니다.");
+            yield break;
+        }
+
+        if (turnContext == null)
+        {
+            Debug.LogError($"{name} 실행 실패: TurnContext가 없습니다.");
+            yield break;
+        }
+
+        SymbolExecutionContext executionContext = new SymbolExecutionContext(player, enemy, turnContext, this, countInTurn, baseAttack, baseDefense, relicController, isReplay);
+
+        turnContext.BeginSymbolExecution(executionContext);
+
+        try
+        {
+            relicController?.BeforeSymbolExecute(executionContext);
+
+            if (!executionContext.Cancelled)
             {
-                UIFXManager.Instance.StartCoroutine(Co_PlayPulseAnimation(targetUI, 0.3f, 1.3f));
+                CalculateFinalValues(executionContext, relicController);
+                if (targetUI != null && UIFXManager.Instance != null)
+                    UIFXManager.Instance.StartCoroutine(Co_PlayPulseAnimation(targetUI, effectInterval, pulseScale));
+                yield return ExecuteEffectList(specialEffects, executionContext, targetUI);
+                if (targetUI != null && UIFXManager.Instance != null)
+                    UIFXManager.Instance.StartCoroutine(Co_PlayPulseAnimation(targetUI, effectInterval, pulseScale));
+                yield return ExecuteEffectList(basicEffects, executionContext, targetUI);
             }
-            effect.Apply(player, enemy, context, this, countInTurn);
-            yield return new WaitForSeconds(0.3f);
+
+            relicController?.AfterSymbolExecute(executionContext);
         }
-
-        foreach (var effect in basicEffects)
+        finally
         {
-            if (targetUI != null)
-            {
-                UIFXManager.Instance.StartCoroutine(Co_PlayPulseAnimation(targetUI, 0.3f, 1.3f));
-            }
-            effect.Apply(player, enemy, context, this, countInTurn);
-            yield return new WaitForSeconds(0.3f);
+            turnContext.EndSymbolExecution(executionContext);
         }
+    }
 
-        int finalFlyDamage = context.totalDamage - damageSnapshot;
-        int finalFlyDefense = context.totalDefense - defenseSnapshot;
+    public bool HasTag(SymbolTag tag)
+    {
+        return symbolTags != null && symbolTags.Contains(tag);
+    }
 
-        if (finalFlyDamage > 0 && targetUI != null)
+    private void CalculateFinalValues(SymbolExecutionContext context, RelicController relicController)
+    {
+        int finalAttack = context.Player.ModifyOutgoingDamage(context.BaseAttack, this, context.TurnContext);
+
+        if (relicController != null)
+            finalAttack = relicController.ModifySymbolPower(context, finalAttack);
+
+        context.SetFinalAttack(finalAttack);
+        context.SetFinalDefense(context.BaseDefense);
+    }
+
+    private IEnumerator ExecuteEffectList(List<SymbolEffect> effects, SymbolExecutionContext context, RectTransform targetUI)
+    {
+        if (effects == null)
+            yield break;
+
+        foreach (SymbolEffect effect in effects)
         {
-            yield return UIFXManager.Instance.Co_FlyNumber(
-                finalFlyDamage,
-                targetUI.position,
-                UIFXManager.Instance.totalDamageTargetUI,
-                Color.red,
-                UIFXManager.Instance.totalDamageText,
-                context.totalDamage // 미래 수치로 현재 상태를 그대로 주입
-            );
-        }
+            if (context.Cancelled)
+                yield break;
 
-        if (finalFlyDefense > 0 && targetUI != null)
-        {
-            yield return UIFXManager.Instance.Co_FlyNumber(
-                finalFlyDefense,
-                targetUI.position,
-                UIFXManager.Instance.totalShieldTargetUI,
-                Color.cyan,
-                UIFXManager.Instance.totalShieldText,
-                context.totalDefense
-            );
+            if (effect == null)
+                continue;
+
+            effect.Apply(context);
+
+            if (effectInterval > 0f)
+                yield return new WaitForSeconds(effectInterval);
         }
     }
 
     private IEnumerator Co_PlayPulseAnimation(RectTransform uiTransform, float duration, float maxScale)
     {
+        if (uiTransform == null)
+            yield break;
+
+        Vector3 originScale = uiTransform.localScale;
+        Vector3 targetScale = originScale * maxScale;
         float elapsedTime = 0f;
-        Vector3 originScale = Vector3.one;
-        Vector3 targetScale = Vector3.one * maxScale;
 
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
-            float t = elapsedTime / duration;
+
+            float t = Mathf.Clamp01(elapsedTime / duration);
             float pulseProgress = Mathf.Sin(t * Mathf.PI);
-            uiTransform.localScale = originScale + (targetScale - originScale) * pulseProgress;
+
+            uiTransform.localScale = Vector3.Lerp(originScale, targetScale, pulseProgress);
+
             yield return null;
         }
+
         uiTransform.localScale = originScale;
     }
 }
-

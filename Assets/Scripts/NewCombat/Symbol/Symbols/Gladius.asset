@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Gladius
   m_EditorClassIdentifier: 
   symbolType: 0
-  symbolSprite: {fileID: -7375953187843166275, guid: d2cbbbaebc8be5b4396ff43591b9fb2a, type: 3}
+  symbolSprite: {fileID: 9141968053449374978, guid: f3dc3fe0fc328794c81565456007c561, type: 3}
   symbolTags: 0000000001000000
   baseAttack: 4
   baseDefense: 1

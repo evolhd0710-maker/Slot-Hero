@@ -1,9 +1,18 @@
 using UnityEngine;
-[CreateAssetMenu(fileName = "DefenseEffect", menuName = "Effects/Defense")]
+
+[CreateAssetMenu(menuName = "Symbol Effects/Defense")]
 public class DefenseEffect : SymbolEffect
 {
-    public override void Apply(NewPlayer player, NewEnemy enemy, TurnContext context, Symbol parent, int countInTurn)
+    public override void Apply(SymbolExecutionContext context)
     {
-        context.totalDefense += parent.baseDefense;
+        int defense = context.FinalDefense;
+
+        if (defense <= 0)
+            return;
+
+        context.TurnContext.totalDefense += defense;
+        context.ReportDefense(defense);
+
+        Debug.Log($"{context.Symbol.name} 예약 방어도{defense} : 현재 누적 방어도: {context.TurnContext.totalDefense} ");
     }
 }

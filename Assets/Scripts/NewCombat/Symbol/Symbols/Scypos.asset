@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Scypos
   m_EditorClassIdentifier: 
   symbolType: 1
-  symbolSprite: {fileID: 8128842286770729968, guid: 691ef69b44ff16248b3a04f9ce8f6fa3, type: 3}
+  symbolSprite: {fileID: 8128842286770729968, guid: 04efcae83b9355649ac21dbf1a24c8b4, type: 3}
   symbolTags: 0200000001000000
   baseAttack: 2
   baseDefense: 2

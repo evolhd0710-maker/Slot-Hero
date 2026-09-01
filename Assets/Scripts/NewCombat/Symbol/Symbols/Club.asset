@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Club
   m_EditorClassIdentifier: 
   symbolType: 3
-  symbolSprite: {fileID: -7656451306796661391, guid: 77f701ed0703c7c4e9c4f86ebe3c54ff, type: 3}
+  symbolSprite: {fileID: -7656451306796661391, guid: 015d23a3e437c9344b6e428ad58eb0a3, type: 3}
   symbolTags: 0300000004000000
   baseAttack: 5
   baseDefense: 0
@@ -21,4 +21,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 99579be33b922524c9bc9a36ab6e03d9, type: 2}
   - {fileID: 11400000, guid: 7e3e310a25cd8674794384570a8a6935, type: 2}
   specialEffects:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 66cc41a397d236741ad8f1dfbb94f8a0, type: 2}

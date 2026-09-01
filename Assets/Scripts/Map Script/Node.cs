@@ -1,76 +1,161 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
-using TMPro;
-using System.Collections;
 
 public class Node : MonoBehaviour
 {
+    [Header("노드 정보")]
     public int nodeIndex;
     public int[] nodeCoordinate = new int[2];
     public MapManager mapManager;
-    public bool isSelectable = false;
+    public bool isSelectable;
     public HashSet<Node> nextNodes = new HashSet<Node>();
     public Button nodeButton;
 
+    [Header("노드 종류별 이미지")]
+    [Tooltip("0: 일반 전투, 1: 엘리트 전투, 2: 상점, 3: 회복, 4: 이벤트, 5: 보스")]
+    public Image[] nodeImage;
+
+    [Header("전투 노드 적 설정")]
+    [SerializeField] private EnemyDefinitionData enemyDefinition;
+
+    [Header("하이라이트 크기 애니메이션")]
+    [SerializeField] private float targetScaleMultiplier = 1.2f;
+    [SerializeField] private float pulseSpeed = 5f;
 
     private Coroutine pulseCoroutine;
     private Vector3 initialScale;
-    [SerializeField] private float targetScaleMultiplier = 1.2f; // 최대 커지는 배율
-    [SerializeField] private float pulseSpeed = 5.0f;           // 반복 속도
+    private bool isInitialized;
+
+    public EnemyDefinitionData EnemyDefinition => enemyDefinition;
 
     private void Awake()
     {
-        nodeButton = GetComponent<Button>();
-        initialScale = transform.localScale;
-        if (initialScale.z == 0) initialScale.z = 1f;
+        InitializeNode();
+        ApplyNodeImage();
     }
 
-
-    public void SetHighlight(bool On)
+    private void OnEnable()
     {
-        this.GetComponent<Button>().interactable = On;
-        // 버튼의 Image 컴포넌트가 있는지 확인 후 색상 변경
-        if (nodeButton.targetGraphic != null)
+        InitializeNode();
+
+        if (isSelectable)
+            StartPulseAnimation();
+    }
+
+    private void InitializeNode()
+    {
+        if (isInitialized)
+            return;
+
+        if (nodeButton == null)
+            nodeButton = GetComponent<Button>();
+
+        if (nodeButton == null)
+            nodeButton = GetComponentInChildren<Button>(true);
+
+        initialScale = transform.localScale;
+
+        if (Mathf.Approximately(initialScale.z, 0f))
+            initialScale.z = 1f;
+
+        isInitialized = true;
+    }
+
+    public void SetNodeType(int type)
+    {
+        nodeIndex = type;
+        ApplyNodeImage();
+    }
+
+    private void ApplyNodeImage()
+    {
+        if (nodeImage == null || nodeImage.Length == 0)
+            return;
+
+        for (int i = 0; i < nodeImage.Length; i++)
         {
-            nodeButton.targetGraphic.color = On ? Color.yellow : Color.white;
+            if (nodeImage[i] != null)
+                nodeImage[i].gameObject.SetActive(false);
         }
 
-        if (On)
+        if (nodeIndex < 0 || nodeIndex >= nodeImage.Length)
         {
-            if (pulseCoroutine == null)
-            {
-                pulseCoroutine = StartCoroutine(PulseAnimation());
-            }
+            Debug.LogWarning(
+                $"{name}의 nodeIndex가 이미지 배열 범위를 벗어났습니다. nodeIndex: {nodeIndex}, 이미지 개수: {nodeImage.Length}",
+                this
+            );
+
+            return;
         }
+
+        Image activeImage = nodeImage[nodeIndex];
+
+        if (activeImage == null)
+            return;
+
+        activeImage.gameObject.SetActive(true);
+
+        // 현재 활성화된 노드 이미지를 Button의 Target Graphic으로 설정한다.
+        // 이 설정이 있어야 일반/엘리트 이미지 모두 비활성 색상이 정상 적용된다.
+        if (nodeButton != null)
+            nodeButton.targetGraphic = activeImage;
+    }
+
+    public void SetEnemyDefinition(EnemyDefinitionData definition)
+    {
+        enemyDefinition = definition;
+    }
+
+    public void SetHighlight(bool on)
+    {
+        isSelectable = on;
+
+        // 노드 자신과 자식에 존재하는 모든 Button을 함께 변경한다.
+        Button[] buttons = GetComponentsInChildren<Button>(true);
+
+        foreach (Button button in buttons)
+        {
+            if (button != null)
+                button.interactable = on;
+        }
+
+        if (nodeButton != null)
+            nodeButton.interactable = on;
+
+        if (on)
+            StartPulseAnimation();
         else
-        {
-            if (pulseCoroutine != null)
-            {
-                StopCoroutine(pulseCoroutine);
-                pulseCoroutine = null;
-            }
-            // 원래 크기로 즉시 복구 (사라짐 방지)
-            transform.localScale = initialScale;
-        }
+            StopPulseAnimation();
+    }
+
+    private void StartPulseAnimation()
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        if (pulseCoroutine != null)
+            return;
+
+        pulseCoroutine = StartCoroutine(PulseAnimation());
     }
 
     private IEnumerator PulseAnimation()
     {
-        // 시작 시간을 기록하여 일정한 속도로 움직이게 함
-        float startTime = Time.time;
+        float startTime = Time.unscaledTime;
+
+        Vector3 targetScale = new Vector3(
+            initialScale.x * targetScaleMultiplier,
+            initialScale.y * targetScaleMultiplier,
+            initialScale.z
+        );
 
         while (isSelectable)
         {
-            // (현재시간 - 시작시간)을 사용하여 개별 노드마다 독립적인 타이밍 부여
-            float phase = (Time.time - startTime) * pulseSpeed;
-            float lerpTime = (Mathf.Sin(phase) + 1f) / 2f; // 0 ~ 1 사이를 부드럽게 반복
+            float phase = (Time.unscaledTime - startTime) * pulseSpeed;
+            float lerpTime = (Mathf.Sin(phase) + 1f) * 0.5f;
 
-            Vector3 targetScale = initialScale * targetScaleMultiplier;
-
-            // Z축은 항상 initialScale.z (보통 1)를 유지하도록 설정
             transform.localScale = new Vector3(
                 Mathf.Lerp(initialScale.x, targetScale.x, lerpTime),
                 Mathf.Lerp(initialScale.y, targetScale.y, lerpTime),
@@ -79,34 +164,43 @@ public class Node : MonoBehaviour
 
             yield return null;
         }
+
+        pulseCoroutine = null;
+        transform.localScale = initialScale;
+    }
+
+    private void StopPulseAnimation()
+    {
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+
+        if (isInitialized)
+            transform.localScale = initialScale;
     }
 
     public void OnNodeClicked()
     {
-        mapManager.OnNodeSelected(this);    
-        switch (nodeIndex)
-        {
-            case 0:
-                //일반 몬스터
-                Debug.Log("0");
-                break;
-            case 1:
-                //보스 몬스터
-                Debug.Log("1");
+        if (!isSelectable)
+            return;
 
-                break;
-            case 2:
-                //상점
-                Debug.Log("2");
-                break;
-            case 3:
-                //체력회복
-                Debug.Log("3");
-                break;
-            case 4:
-                //랜덤 이벤트
-                Debug.Log("4");
-                break;
+        if (mapManager == null)
+        {
+            Debug.LogError(
+                $"{name}에 MapManager가 연결되지 않았습니다.",
+                this
+            );
+
+            return;
         }
+
+        mapManager.OnNodeSelected(this);
+    }
+
+    private void OnDisable()
+    {
+        StopPulseAnimation();
     }
 }

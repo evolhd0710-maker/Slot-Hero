@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: Scutum
   m_EditorClassIdentifier: 
   symbolType: 4
-  symbolSprite: {fileID: 6190887306368950168, guid: 005c9f5d7fd9baf47a30a20c3dd140be, type: 3}
+  symbolSprite: {fileID: -1402158385078374774, guid: ead157b776f166f4499eabdc0b75771b, type: 3}
   symbolTags: 0000000005000000
-  baseAttack: 0
+  baseAttack: 1
   baseDefense: 7
   basicEffects:
   - {fileID: 11400000, guid: 99579be33b922524c9bc9a36ab6e03d9, type: 2}
   - {fileID: 11400000, guid: 7e3e310a25cd8674794384570a8a6935, type: 2}
-  specialEffects: []
+  specialEffects:
+  - {fileID: 11400000, guid: c201a77ce4f058647983481b9f3b986b, type: 2}

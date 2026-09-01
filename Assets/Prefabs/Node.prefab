@@ -253,12 +253,12 @@ RectTransform:
   m_GameObject: {fileID: 5784445934116720412}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7161067384116238176}
-  - {fileID: 8387336215184438760}
   - {fileID: 4638709875151516582}
+  - {fileID: 8387336215184438760}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -347,3 +347,11 @@ MonoBehaviour:
   mapManager: {fileID: 0}
   isSelectable: 0
   nodeButton: {fileID: 0}
+  nodeImage:
+  - {fileID: 6426785821754495670}
+  - {fileID: 3049811344481030189}
+  enemyDefinition: {fileID: 0}
+  targetScaleMultiplier: 1.2
+  pulseSpeed: 5
+  selectableColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}

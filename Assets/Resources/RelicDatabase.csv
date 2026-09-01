@@ -1,7 +1,0 @@
-순번,유물명,유물 설명,발동 트리거,발동순번,효과 내용,효과 정도
-No,Relic_Name,,Relic_Trigger,Relic_Order,Relic_Effect_Type,Relic_Effect_Value
-int,string,,string,string,string,float
-1,0,NULL,NULL,preCombat,NULL,1
-2,1,NULL,NULL,preCombat,NULL,1
-3,2,NULL,NULL,Combat,NULL,1
-4,3,NULL,NULL,postCombat,NULL,1

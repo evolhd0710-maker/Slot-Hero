@@ -1,27 +1,64 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+ï»¿using System;
 using UnityEngine;
-using UnityEngine.UI; 
 
-public class NewUnitBase :MonoBehaviour
+public class NewUnitBase : MonoBehaviour
 {
     private int currentHealth;
     private int shield;
+
     public CharacterData data;
 
-    public event Action<int, int> OnHpChanged; 
+    public event Action<int, int> OnHpChanged;
     public event Action<int> OnShieldChanged;
+
+    // ì‹¤ë“œì— ë§‰íˆëŠ”ì§€ì™€ ê´€ê³„ì—†ì´ ë“¤ì–´ì˜¨ ì „ì²´ í”¼í•´ëŸ‰
+    public event Action<int> OnDamageReceived;
+
+    // ì‹¤ë“œë¥¼ í†µê³¼í•˜ì—¬ ì‹¤ì œ ì²´ë ¥ì— ì ìš©ëœ í”¼í•´ëŸ‰
+    public event Action<int> OnDamageTaken;
+
+    // ìƒˆë¡­ê²Œ íšë“í•œ ì‹¤ë“œëŸ‰
+    public event Action<int> OnShieldGained;
+
+    private UnitEffectController effectController;
+
+    public UnitEffectController Effects
+    {
+        get
+        {
+            if (effectController == null)
+                effectController = new UnitEffectController(this);
+
+            return effectController;
+        }
+    }
 
     public int CurrentHealth
     {
-        get { return currentHealth; }
-        // ÀÚ½Ä Å¬·¡½º¿¡¼­µµ ¾ÈÀüÇÏ°Ô Á¢±ÙÇÒ ¼ö ÀÖµµ·Ï protected set À¯Áö
+        get => currentHealth;
+
         protected set
         {
-            // Ã¼·ÂÀÌ 0º¸´Ù ÀÛ¾ÆÁö°Å³ª Max¸¦ ³ÑÁö ¾Ê°Ô Á¦¾î
-            currentHealth = Mathf.Clamp(value, 0, data.maxHealth);
-            OnHpChanged?.Invoke(currentHealth, data.maxHealth);
+            if (data == null)
+            {
+                Debug.LogError(
+                    $"{name}ì— CharacterDataê°€ ì—°ê²°ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.",
+                    this
+                );
+
+                return;
+            }
+
+            currentHealth = Mathf.Clamp(
+                value,
+                0,
+                data.maxHealth
+            );
+
+            OnHpChanged?.Invoke(
+                currentHealth,
+                data.maxHealth
+            );
         }
     }
 
@@ -29,37 +66,219 @@ public class NewUnitBase :MonoBehaviour
 
     public virtual void Setup()
     {
+        if (data == null)
+        {
+            Debug.LogError(
+                $"{name}ì— CharacterDataê°€ ì—°ê²°ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.",
+                this
+            );
+
+            return;
+        }
+
         CurrentHealth = data.maxHealth;
         shield = 0;
+
+        Effects.ClearAll();
+
         OnShieldChanged?.Invoke(shield);
     }
 
-    public virtual void TakeDamage(int damage, string reason)
+    public virtual void TakeDamage(
+        int damage,
+        string reason
+    )
     {
+        if (damage <= 0)
+            return;
+
+        int requestedDamage = damage;
+
+        // ì‹¤ë“œê°€ í”¼í•´ë¥¼ ì „ë¶€ ë§‰ë”ë¼ë„ í”¼í•´ íŒì—…ì„ ë°œìƒì‹œí‚¨ë‹¤.
+        OnDamageReceived?.Invoke(requestedDamage);
+
+        int absorbedDamage = 0;
+
         if (shield > 0)
         {
-            if (shield >= damage)
-            {
-                shield -= damage;
-                damage = 0;
-            }
-            else
-            {
-                damage -= shield;
-                shield = 0;
-            }
+            absorbedDamage = Mathf.Min(
+                shield,
+                damage
+            );
+
+            shield -= absorbedDamage;
+            damage -= absorbedDamage;
+
             OnShieldChanged?.Invoke(shield);
         }
 
-        CurrentHealth -= damage;
+        int healthBeforeDamage = CurrentHealth;
 
-        print($"{data.name}¿¡ {damage} µ¥¹ÌÁö ºÎ¿© ³²ÀºÃ¼·Â {CurrentHealth} : {reason}");
+        if (damage > 0)
+            CurrentHealth -= damage;
+
+        int actualHealthDamage =
+            healthBeforeDamage - CurrentHealth;
+
+        if (actualHealthDamage > 0)
+            OnDamageTaken?.Invoke(actualHealthDamage);
+
+        string unitName =
+            data != null ? data.name : name;
+
+        Debug.Log(
+            $"{unitName} í”¼í•´ ì²˜ë¦¬ | " +
+            $"ë°›ì€ í”¼í•´: {requestedDamage}, " +
+            $"ì‹¤ë“œ í¡ìˆ˜: {absorbedDamage}, " +
+            $"ì²´ë ¥ í”¼í•´: {actualHealthDamage}, " +
+            $"ë‚¨ì€ ì²´ë ¥: {CurrentHealth}, " +
+            $"ë‚¨ì€ ì‹¤ë“œ: {shield}, " +
+            $"ì´ìœ : {reason}",
+            this
+        );
+
+        TurnContext context = new TurnContext();
+
+        Effects.Trigger(
+            TriggerTiming.OnDamaged,
+            new EffectTriggerContext(
+                context,
+                target: this
+            )
+        );
     }
 
-    public virtual void AddShield(int num)
+    public virtual void AddShield(int amount)
     {
-        shield += num;
+        if (amount <= 0)
+            return;
+
+        shield += amount;
+
         OnShieldChanged?.Invoke(shield);
-        print($"{data.name}¿¡ {num} ½Çµå ºÎ¿© ³²Àº ½Çµå {shield}");
+
+        // íšë“í•œ ì‹¤ë“œëŸ‰ì„ íŒì—… UIì— ì „ë‹¬í•œë‹¤.
+        OnShieldGained?.Invoke(amount);
+
+        string unitName =
+            data != null ? data.name : name;
+
+        Debug.Log(
+            $"{unitName}ì—ê²Œ {amount} ì‹¤ë“œ ë¶€ì—¬, ë‚¨ì€ ì‹¤ë“œ {shield}",
+            this
+        );
+    }
+
+    public void ApplyEffect(UnitEffect effect)
+    {
+        if (effect == null)
+            return;
+
+        Effects.AddEffect(effect);
+    }
+
+    public bool HasEffect<T>() where T : UnitEffect
+    {
+        return Effects.HasEffect<T>();
+    }
+
+    public bool RaiseTiming(
+        TriggerTiming timing,
+        TurnContext turnContext,
+        NewUnitBase source = null,
+        Symbol symbol = null
+    )
+    {
+        if (turnContext == null)
+            turnContext = new TurnContext();
+
+        turnContext.actionCancelled = false;
+
+        EffectTriggerContext effectContext =
+            new EffectTriggerContext(
+                turnContext,
+                source,
+                this,
+                symbol
+            );
+
+        Effects.Trigger(
+            timing,
+            effectContext
+        );
+
+        return turnContext.actionCancelled;
+    }
+
+    public int ModifyOutgoingDamage(
+        int rawDamage,
+        Symbol symbol,
+        TurnContext turnContext = null
+    )
+    {
+        int modifiedDamage =
+            Effects.ModifyOutgoingDamage(
+                rawDamage,
+                symbol,
+                turnContext
+            );
+
+        if (rawDamage != modifiedDamage)
+        {
+            Debug.Log(
+                $"íš¨ê³¼ë¡œ ì¸í•œ ë°ë¯¸ì§€ ë³€ê²½: {rawDamage} â†’ {modifiedDamage}",
+                this
+            );
+        }
+
+        return modifiedDamage;
+    }
+
+    public void ClearTurnLimitedEffects()
+    {
+        Effects.ClearTurnLimitedEffects();
+    }
+
+    public void ClearTurnLimitedModifiers()
+    {
+        ClearTurnLimitedEffects();
+    }
+
+    public virtual void Heal(int amount)
+    {
+        if (amount <= 0 || CurrentHealth <= 0)
+            return;
+
+        int healthBefore = CurrentHealth;
+
+        CurrentHealth += amount;
+
+        int actualHealing =
+            CurrentHealth - healthBefore;
+
+        if (actualHealing <= 0)
+            return;
+
+        string unitName =
+            data != null ? data.name : name;
+
+        Debug.Log(
+            $"{unitName} ì²´ë ¥ íšŒë³µ: {actualHealing}, í˜„ì¬ ì²´ë ¥: {CurrentHealth}",
+            this
+        );
+    }
+
+    public void NotifyDamageDealt(
+        int damage,
+        SymbolExecutionContext context = null
+    )
+    {
+        if (damage <= 0)
+            return;
+
+        Effects.OnDamageDealt(
+            damage,
+            context
+        );
     }
 }
